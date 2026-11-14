@@ -64,6 +64,7 @@ What follows from it, including what it rules out.
 | `supersedes` / `superseded_by` | Links between a decision and the one that replaced it |
 | `aliases` | Other IDs that resolve to this decision, such as an old sequential number (D-P5PT) |
 | `tags` | Free-form, for search and filtering |
+| `promoted_by` | Who accepted or rejected a proposed decision: a person's name, or `agent`. Written only on promotion (D-B2NX, proposed) |
 
 ## The basis rule
 
@@ -74,7 +75,9 @@ A decision is something a human decided, not something an agent chose along the 
 - A choice the agent made itself, however sensible, is recorded as `proposed` with `decided_by: agent`. A human accepts or rejects it later.
 - The MCP tool description for `decision_new` states this rule, because agents read tool descriptions on every call.
 
-Who promotes proposed decisions in practice (always the human, or a PM agent during review) is an open question to settle by dogfooding (docs/08).
+Who promotes proposed decisions in practice (always the human, or a PM agent during review) is an open question to settle by dogfooding (docs/08). Agents can promote through MCP when a human tells them to, quoting the human in `basis`, and every promotion records `promoted_by`, so the record shows what happens (D-B2NX, proposed).
+
+Writes go through the redactor field by field: the body as text, and each frontmatter value on its own, re-quoted if it changed, so a `[REDACTED:...]` marker can never break the YAML.
 
 ## Changing a decision
 
@@ -93,6 +96,8 @@ Search and listing include decisions that exist only on other branches and workt
 - `accepted` decisions have a `basis`
 - references (`D-XXXX` in docs and code) point at decisions that exist
 - references to superseded decisions, flagged so the citing text can be updated
+
+References are checked in files matching `[decisions] lint_references` (all Markdown by default). IDs used only as examples in docs go in `[decisions] example_ids`.
 
 ## Migrating from a single numbered file
 

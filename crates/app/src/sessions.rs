@@ -348,7 +348,22 @@ impl Project {
             .map(|r| r.root)
             .unwrap_or_else(|| self.repo.root.clone());
         let summary = {
-            let mut s = Summary::build(redacted.get(), Some(&worktree.to_string_lossy()));
+            let mut roots = vec![worktree.to_string_lossy().into_owned()];
+            if let Some(c) = &ev.cwd {
+                roots.push(c.to_string_lossy().into_owned());
+            }
+            for r in roots.clone() {
+                if let Ok(c) = Path::new(&r).canonicalize() {
+                    roots.push(c.to_string_lossy().into_owned());
+                }
+                // macOS: /var is /private/var.
+                if let Some(rest) = r.strip_prefix("/private") {
+                    roots.push(rest.to_string());
+                }
+            }
+            roots.sort_by_key(|r| std::cmp::Reverse(r.len()));
+            roots.dedup();
+            let mut s = Summary::build(redacted.get(), &roots);
             s.decisions = self.decisions_from_session(id);
             s
         };

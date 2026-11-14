@@ -60,8 +60,8 @@ fn is_plumbing(p: &str) -> bool {
 }
 
 impl Summary {
-    /// Build a summary. `worktree` makes file paths relative.
-    pub fn build(t: &Transcript, worktree: Option<&str>) -> Summary {
+    /// Build a summary. File paths under any of `roots` become relative.
+    pub fn build(t: &Transcript, roots: &[String]) -> Summary {
         let prompts: Vec<String> = t
             .records
             .iter()
@@ -100,8 +100,9 @@ impl Summary {
                 .or_else(|| input.get("notebook_path"))
                 .and_then(Value::as_str)
             {
-                let rel = worktree
-                    .and_then(|w| p.strip_prefix(w))
+                let rel = roots
+                    .iter()
+                    .find_map(|w| p.strip_prefix(w.as_str()))
                     .map(|r| r.trim_start_matches('/').to_string())
                     .unwrap_or_else(|| p.to_string());
                 if !files.contains(&rel) {
@@ -187,7 +188,7 @@ mod tests {
 {"type":"assistant","message":{"content":[{"type":"text","text":"Done: retries with backoff."}]}}
 "#;
         let t = Transcript::parse_jsonl(jsonl);
-        let s = Summary::build(&t, Some("/w"));
+        let s = Summary::build(&t, &["/w".to_string()]);
         assert_eq!(s.asked, "Add a retry to the uploader");
         assert_eq!(s.later_prompts, vec!["Also log failures"]);
         assert_eq!(s.done, "Done: retries with backoff.");

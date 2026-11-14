@@ -2,7 +2,7 @@
 
 Each project has one `inloop.toml` at the repo root, committed. It holds everything project-specific, so InLoop's code and defaults stay general (D-0217). InLoop's own file is [`../inloop.toml`](../inloop.toml); keep it and this doc in step.
 
-Personal settings (session store credentials, the age key's location) live outside the repo, in `~/.config/inloop/`, never in `inloop.toml`.
+Personal settings live outside the repo, never in `inloop.toml`: `~/.config/inloop/config.toml` (`data_dir` to move the local session store; `[s3] access_key_id`, `secret_access_key`) and the project keys in `~/.config/inloop/keys/`. `INLOOP_CONFIG_DIR` and `INLOOP_DATA_DIR` move both (D-360T, proposed).
 
 ## Sections
 
@@ -20,6 +20,8 @@ Personal settings (session store credentials, the age key's location) live outsi
 | `dir` | `docs/decisions` | Where decision files live (D-SJBG) |
 | `id_prefix` | `D` | The letter before the dash |
 | `id_length` | `4` | Crockford base32 characters after the dash |
+| `lint_references` | `["**/*.md"]` | Globs of files whose `D-XXXX` references `inloop lint` checks |
+| `example_ids` | none | IDs used as examples in docs, which lint doesn't expect to exist |
 
 ### `[checks]`
 
@@ -32,7 +34,8 @@ Personal settings (session store credentials, the age key's location) live outsi
 | Key | Default | Meaning |
 |---|---|---|
 | `backend` | `local` | `local` or `s3` (docs/03) |
-| `bucket`, `endpoint`, `region` | none | For `s3`; credentials come from the personal config or the environment |
+| `bucket`, `endpoint`, `region` | none | For `s3`; credentials come from the personal config or the environment (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) |
+| `prefix` | project name | Key prefix inside the bucket |
 
 ### `[redaction]`
 

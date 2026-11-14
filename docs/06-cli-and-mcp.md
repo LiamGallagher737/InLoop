@@ -16,12 +16,14 @@ inloop dec list [filters]         table of decisions: --status, --tag, --unmerge
 inloop dec search <query>         ranked results with matching snippets
 inloop dec accept|reject <id>     promote or reject a proposed decision
 inloop dec supersede <old> <new>  link a replacement
-inloop session list|show|search   find captured sessions
-inloop session capture            called by hooks
-inloop session status|purge       capture health; delete a session
+inloop session list|show|search   find captured sessions (show --transcript for the full text)
+inloop session capture            capture now (--backfill for anything missed)
+inloop session status|purge|sync  capture health; delete a session; rebuild the index from the store
+inloop key show|export|import     this project's session encryption key
 inloop search <query>             decisions and sessions together
 inloop lint                       check decisions (docs/02)
-inloop scan                       re-run redaction over everything stored
+inloop scan [--fix]               re-run redaction over everything stored
+inloop status                     where you are: branch, main, worktrees
 inloop mcp                        run the MCP server over stdio
 ```
 
@@ -64,9 +66,10 @@ Always registered. Tool names and descriptions never mention a PM, a board or ch
 | `decision_get` | One decision by ID (aliases resolve) |
 | `decision_list` | Filtered list |
 | `decision_new` | Record a decision; states the basis rule (docs/02) |
+| `decision_accept` / `decision_reject` | Promote a proposed decision because a human said so; `basis` quotes them (D-B2NX, proposed) |
 | `decision_supersede` | Record a replacement |
 | `session_search` | Search session summaries |
-| `session_get` | A session's summary, or its full transcript on request |
+| `session_get` | A session's summary, or its full transcript on request, paged by `offset` and `max_chars` |
 | `search` | Decisions and sessions together |
 | `context` | Where this agent is: repo, branch, worktree, main branch, ahead/behind, and its task when the PM layer is on |
 

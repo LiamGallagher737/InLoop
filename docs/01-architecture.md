@@ -11,12 +11,14 @@ InLoop ships as one binary, `inloop`, built from a Cargo workspace (D-0SXZ). Pla
 | `git` | Repository and worktree discovery, reading files from branches and remote refs |
 | `decisions` | Decision files: parse, validate, create, supersede, lint |
 | `index` | The local SQLite full-text index over decisions and session summaries |
-| `sessions` | Capture from agent sources, summaries, the storage trait and its backends |
+| `sessions` | Agent sources (Claude Code), transcripts and summaries |
+| `store` | The `SessionStore`: age encryption, zstd, and the local and S3-compatible backends |
+| `app` | Every operation, shared by the CLI and MCP so both return the same data (D-30V6, proposed) |
 | `pm` | The optional PM layer: board records, conflict groups, briefs, reports |
 | `mcp` | The MCP server (rmcp), core toolset and the separate PM toolset |
 | `cli` | The `inloop` binary: argument parsing and human output |
 
-The core crates never depend on `pm`. The `mcp` and `cli` crates register PM commands and tools only when the project enables the PM layer (D-N6YH).
+Git is reached through the `git` command line, not a library (D-FK3P, proposed). The core crates never depend on `pm`. The `mcp` and `cli` crates register PM commands and tools only when the project enables the PM layer (D-N6YH).
 
 ## Where data lives
 
@@ -27,6 +29,8 @@ InLoop keeps three kinds of data in three places, each chosen for how it needs t
 | Decisions | In the repo, `docs/decisions/` by default (D-1X24, D-SJBG) | Must sync to everyone through git, follow branches, and be reviewed in PRs |
 | Index, board, local state | The git common directory, `$(git rev-parse --git-common-dir)/inloop/` (D-SRGY) | Shared by every worktree of the clone, never committed, never merged |
 | Session transcripts | The session store: local disk or an S3-compatible bucket, encrypted (D-T1C2) | Large, private, must be deletable for real |
+
+Each person's project key lives in `~/.config/inloop/keys/` and the `local` session backend in `~/.local/share/inloop/<project>/` (D-360T, proposed).
 
 The index is derived data. It can always be rebuilt from the decision files on every branch and worktree plus the session store's metadata.
 
@@ -53,4 +57,4 @@ The CLI shows this as a short status line; MCP returns it as fields.
 
 - **Recording a decision:** agent calls `decision_new` (or a person runs `inloop dec new`) → redactor → new file written in the current worktree → index updated.
 - **Searching:** query → index (all worktrees, remote branches, session summaries) → results with provenance.
-- **Capturing a session:** agent app hook fires → transcript read → redactor → summary → compress → encrypt → session store; metadata and summary → index.
+- **Capturing a session:** agent app hook fires → `inloop session hook` starts capture in the background and returns (D-FG6G, proposed) → transcript read, bookkeeping records dropped (D-7K5W, proposed) → redactor → summary → compress → encrypt → session store; metadata and summary → index.
