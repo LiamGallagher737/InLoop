@@ -1,0 +1,16 @@
+[package]
+name = "inloop-git"
+description = "Repository and worktree discovery for InLoop, through the git command line"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
