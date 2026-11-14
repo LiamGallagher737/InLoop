@@ -19,7 +19,7 @@ pub struct BoardView {
     pub tasks: Vec<Task>,
     /// Blockers children reported that the PM hasn't folded in yet.
     pub unfolded_blockers: Vec<Blocker>,
-    /// Reports newer than their task's last update: not folded in yet.
+    /// Reports the PM hasn't folded in yet.
     pub unfolded_reports: Vec<Report>,
     /// Blocked tasks whose blockers are all merged: ready to propose.
     pub newly_unblocked: Vec<Id>,
@@ -131,10 +131,7 @@ impl Project {
         let tasks = listing.records;
         let unfolded_blockers = board.unfolded_blockers().map_err(err)?;
         let reports = board.list_reports().map_err(err)?.records;
-        let unfolded_reports = reports
-            .into_iter()
-            .filter(|r| tasks.iter().any(|t| t.id == r.task && r.at > t.updated))
-            .collect();
+        let unfolded_reports = reports.into_iter().filter(|r| !r.folded).collect();
         Ok(BoardView {
             newly_unblocked: inloop_pm::newly_unblocked(&tasks),
             corrupt: listing
@@ -368,12 +365,20 @@ impl Project {
             let Some(task) = board.get_task(&rep.task).map_err(err)? else {
                 continue;
             };
-            if rep.at <= task.updated {
+            if rep.folded {
                 continue;
             }
             let Ok(task) = inloop_pm::apply_report(task, &rep, inloop_core::now()) else {
                 continue;
             };
+            let mut rep = rep;
+            rep.folded = true;
+            board
+                .put_report(
+                    r.redact(rep.clone())
+                        .map_err(|e| AppError::Redactor(e.to_string()))?,
+                )
+                .map_err(err)?;
             out.reports_folded.push(rep.id.clone());
             out.tasks_changed.push(task.id.clone());
             self.put_task(task)?;

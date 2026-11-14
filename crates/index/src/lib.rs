@@ -6,6 +6,7 @@
 
 use std::path::Path;
 
+use inloop_redact::{RedactError, Redactable, Redacted, Redactor};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 
@@ -52,6 +53,19 @@ pub struct Doc {
     pub tags: String,
     /// Anything the caller wants back with a hit (provenance, status...).
     pub meta: serde_json::Value,
+}
+
+impl Redactable for Doc {
+    fn redact_with(self, r: &Redactor) -> Result<Self, RedactError> {
+        Ok(Doc {
+            kind: self.kind,
+            id: self.id,
+            title: r.redact_text(&self.title)?,
+            body: r.redact_text(&self.body)?,
+            tags: r.redact_text(&self.tags)?,
+            meta: self.meta.redact_with(r)?,
+        })
+    }
 }
 
 /// A search hit, best first.
@@ -132,14 +146,15 @@ impl Index {
     }
 
     /// Replace every document of `kind` with `docs`, in one transaction.
-    pub fn replace_all(&mut self, kind: Kind, docs: &[Doc]) -> Result<(), IndexError> {
+    /// Only redacted documents get in (D-G1R6).
+    pub fn replace_all(&mut self, kind: Kind, docs: &[Redacted<Doc>]) -> Result<(), IndexError> {
         let tx = self.conn.transaction()?;
         tx.execute("DELETE FROM docs WHERE kind = ?1", params![kind.as_str()])?;
         {
             let mut stmt = tx.prepare(
                 "INSERT INTO docs (kind, id, title, body, tags, meta) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             )?;
-            for d in docs.iter().filter(|d| d.kind == kind) {
+            for d in docs.iter().map(Redacted::get).filter(|d| d.kind == kind) {
                 stmt.execute(params![
                     kind.as_str(),
                     d.id,
@@ -154,8 +169,9 @@ impl Index {
         Ok(())
     }
 
-    /// Add or replace one document.
-    pub fn upsert(&mut self, doc: &Doc) -> Result<(), IndexError> {
+    /// Add or replace one document. Only redacted documents get in.
+    pub fn upsert(&mut self, doc: &Redacted<Doc>) -> Result<(), IndexError> {
+        let doc = doc.get();
         let tx = self.conn.transaction()?;
         tx.execute(
             "DELETE FROM docs WHERE kind = ?1 AND id = ?2",
@@ -354,15 +370,26 @@ fn terms(query: &str) -> Vec<String> {
 mod tests {
     use super::*;
 
-    fn doc(kind: Kind, id: &str, title: &str, body: &str) -> Doc {
-        Doc {
-            kind,
-            id: id.into(),
-            title: title.into(),
-            body: body.into(),
-            tags: String::new(),
-            meta: serde_json::json!({"x": id}),
-        }
+    fn red() -> Redactor {
+        Redactor::new(&inloop_redact::RedactorConfig {
+            include_process_env: false,
+            root: std::env::temp_dir().join("inloop-index-test-none"),
+            ..Default::default()
+        })
+        .unwrap()
+    }
+
+    fn doc(kind: Kind, id: &str, title: &str, body: &str) -> Redacted<Doc> {
+        red()
+            .redact(Doc {
+                kind,
+                id: id.into(),
+                title: title.into(),
+                body: body.into(),
+                tags: String::new(),
+                meta: serde_json::json!({"x": id}),
+            })
+            .unwrap()
     }
 
     #[test]

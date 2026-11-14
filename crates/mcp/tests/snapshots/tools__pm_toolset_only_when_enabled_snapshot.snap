@@ -4,46 +4,57 @@ expression: pm
 ---
 [
   {
+    "name": "board_check",
     "description": "Before proposing tasks to run side by side, check them (and every running task) for overlapping paths and shared conflict groups.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "properties": {
         "ids": {
-          "default": [],
           "description": "Tasks you want to run together. Empty means every ready task. Running tasks are always included.",
+          "type": "array",
           "items": {
             "type": "string"
           },
-          "type": "array"
+          "default": []
         }
       },
       "type": "object"
-    },
-    "name": "board_check"
+    }
   },
   {
+    "name": "board_fold",
     "description": "Fold task sessions' blockers and reports into the board: blocked tasks get their status and reason, reported tasks move to review with a note.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object"
-    },
-    "name": "board_fold"
+    }
   },
   {
+    "name": "board_list",
     "description": "The work board: every task, plus blockers and reports from task sessions not folded in yet, and tasks newly unblocked.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object"
-    },
-    "name": "board_list"
+    }
   },
   {
+    "name": "task_blocked",
     "description": "Report that a task is blocked on something you can't resolve yourself, then stop and wait.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "required": [
+        "kind",
+        "on",
+        "details"
+      ],
+      "type": "object",
       "properties": {
-        "details": {
-          "type": "string"
+        "task": {
+          "description": "The task. Defaults to the one owning this branch.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "kind": {
           "description": "external (an outside service or account), task (another task must land first; give its ID in `on`) or human (a fact or call only a person can give).",
@@ -53,197 +64,222 @@ expression: pm
           "description": "What you're blocked on.",
           "type": "string"
         },
-        "task": {
-          "description": "The task. Defaults to the one owning this branch.",
-          "type": [
-            "string",
-            "null"
-          ]
+        "details": {
+          "type": "string"
         }
-      },
-      "required": [
-        "kind",
-        "on",
-        "details"
-      ],
-      "type": "object"
-    },
-    "name": "task_blocked"
+      }
+    }
   },
   {
+    "name": "task_brief",
     "description": "The generated brief to start a task's session with: the task, docs to read, rules, checks, relevant decisions and the report format.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "required": [
+        "id"
+      ],
+      "type": "object",
       "properties": {
         "id": {
           "description": "A task ID such as T-4M1P.",
           "type": "string"
         }
-      },
-      "required": [
-        "id"
-      ],
-      "type": "object"
-    },
-    "name": "task_brief"
+      }
+    }
   },
   {
+    "name": "task_get",
     "description": "One task with its claims, reports and blockers.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "required": [
+        "id"
+      ],
+      "type": "object",
       "properties": {
         "id": {
           "description": "A task ID such as T-4M1P.",
           "type": "string"
         }
-      },
-      "required": [
-        "id"
-      ],
-      "type": "object"
-    },
-    "name": "task_get"
+      }
+    }
   },
   {
+    "name": "task_new",
     "description": "Add a task to the board (project manager only).",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "required": [
+        "title"
+      ],
+      "type": "object",
       "properties": {
-        "blocked_by": {
-          "default": [],
-          "description": "Tasks that must merge first.",
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "default": ""
+        },
+        "touches": {
+          "description": "Path globs the task will touch, relative to the repo root, e.g. \"crates/core/**\".",
+          "type": "array",
           "items": {
             "type": "string"
           },
-          "type": "array"
+          "default": []
         },
-        "description": {
-          "default": "",
-          "type": "string"
+        "blocked_by": {
+          "description": "Tasks that must merge first.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
         },
         "owner": {
           "type": [
             "string",
             "null"
           ]
-        },
-        "title": {
-          "type": "string"
-        },
-        "touches": {
-          "default": [],
-          "description": "Path globs the task will touch, relative to the repo root, e.g. \"crates/core/**\".",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
         }
-      },
-      "required": [
-        "title"
-      ],
-      "type": "object"
-    },
-    "name": "task_new"
+      }
+    }
   },
   {
+    "name": "task_report",
     "description": "At the end of a task, report once: what's done, what isn't, check results, decisions recorded and plan changes. Be plain about what doesn't work.",
     "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$defs": {
         "CheckResultParam": {
+          "type": "object",
           "properties": {
             "command": {
               "type": "string"
+            },
+            "passed": {
+              "type": "boolean"
             },
             "note": {
               "type": [
                 "string",
                 "null"
               ]
-            },
-            "passed": {
-              "type": "boolean"
             }
           },
           "required": [
             "command",
             "passed"
-          ],
-          "type": "object"
+          ]
         }
       },
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
       "properties": {
-        "checks": {
-          "description": "Each check command, whether it passed, and a note if not.",
-          "items": {
-            "$ref": "#/$defs/CheckResultParam"
-          },
-          "type": "array"
-        },
-        "decisions": {
-          "default": [],
-          "description": "Decision IDs you recorded.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "done": {
-          "default": [],
-          "description": "What is finished.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "not_done": {
-          "default": [],
-          "description": "Anything left or skipped.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "plan_changes": {
-          "default": [],
-          "description": "Anything that should change the plan.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "summary": {
-          "type": "string"
-        },
         "task": {
           "description": "The task. Defaults to the one owning this branch.",
           "type": [
             "string",
             "null"
           ]
+        },
+        "done": {
+          "description": "What is finished.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "not_done": {
+          "description": "Anything left or skipped.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "checks": {
+          "description": "Each check command, whether it passed, and a note if not.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CheckResultParam"
+          }
+        },
+        "decisions": {
+          "description": "Decision IDs you recorded.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "plan_changes": {
+          "description": "Anything that should change the plan.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "summary": {
+          "type": "string"
         }
       },
       "required": [
         "summary"
-      ],
-      "type": "object"
-    },
-    "name": "task_report"
+      ]
+    }
   },
   {
+    "name": "task_update",
     "description": "Change a task (project manager only). Moving to running needs a branch and claims the task; moving to ready or merged releases the claim.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "required": [
+        "id"
+      ],
+      "type": "object",
       "properties": {
-        "blocked_by": {
-          "items": {
-            "type": "string"
-          },
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "description": "ready, running, review, merged, blocked-external, blocked-task or blocked-human.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "touches": {
           "type": [
             "array",
             "null"
-          ]
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "blocked_by": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
         },
         "blocked_reason": {
           "description": "Why it's blocked (needed for blocked-external and blocked-human). Empty clears it.",
@@ -259,31 +295,7 @@ expression: pm
             "null"
           ]
         },
-        "decisions": {
-          "default": [],
-          "description": "Decision IDs to link to the task.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "description": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "id": {
-          "type": "string"
-        },
-        "note": {
-          "description": "A note to add to the task's history.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "owner": {
+        "worktree": {
           "type": [
             "string",
             "null"
@@ -295,40 +307,28 @@ expression: pm
             "null"
           ]
         },
-        "status": {
-          "description": "ready, running, review, merged, blocked-external, blocked-task or blocked-human.",
+        "owner": {
           "type": [
             "string",
             "null"
           ]
         },
-        "title": {
+        "note": {
+          "description": "A note to add to the task's history.",
           "type": [
             "string",
             "null"
           ]
         },
-        "touches": {
+        "decisions": {
+          "description": "Decision IDs to link to the task.",
+          "type": "array",
           "items": {
             "type": "string"
           },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "worktree": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "default": []
         }
-      },
-      "required": [
-        "id"
-      ],
-      "type": "object"
-    },
-    "name": "task_update"
+      }
+    }
   }
 ]

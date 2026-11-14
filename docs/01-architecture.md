@@ -46,7 +46,7 @@ Decisions on branches that are not checked out anywhere (a co-founder's pushed b
 
 Every decision and session result carries a provenance record (D-E1S7):
 
-- `state`: `merged` (on the main branch) or `unmerged`
+- `state`: `merged` (on the main branch) or `unmerged`. "The main branch" is whichever of local `main` and `origin/main` is further ahead. A worktree's copy of a decision that its branch never changed defers to main's current version.
 - `branch`, `worktree` path (if checked out), commits ahead of main
 - `task`: the PM task that owns that branch, only when the PM layer is in use
 - for decisions, `superseded_by` if a newer decision replaced it

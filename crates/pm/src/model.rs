@@ -230,6 +230,9 @@ pub struct Report {
     pub plan_changes: Vec<String>,
     #[serde(default)]
     pub summary: String,
+    /// True once the PM has folded this report into its task.
+    #[serde(default)]
+    pub folded: bool,
 }
 
 /// What a blocked child is waiting on.
@@ -371,6 +374,7 @@ impl Redactable for Report {
             decisions: self.decisions.redact_with(r)?,
             plan_changes: self.plan_changes.redact_with(r)?,
             summary: self.summary.redact_with(r)?,
+            folded: self.folded,
         })
     }
 }

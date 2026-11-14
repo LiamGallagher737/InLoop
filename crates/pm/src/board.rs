@@ -479,6 +479,7 @@ mod tests {
             decisions: vec![],
             plan_changes: vec![],
             summary: "done".into(),
+            folded: false,
         })?)?;
         board.put_claim(r.redact(Claim {
             id: Id::parse_loose("C-0001")?,

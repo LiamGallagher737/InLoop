@@ -112,6 +112,8 @@ fn captures_redacts_encrypts_searches_and_purges() {
         serde_json::json!(["src/billing.rs"])
     );
     assert_eq!(s["summary"]["done"], "Billing is wired up with retries.");
+    // No commits yet, so the session's work isn't on main.
+    assert_eq!(s["provenance"]["state"], "unmerged", "{s}");
 
     // The transcript: redacted, `cat .env` output dropped, bookkeeping gone.
     let full = r.json(&["session", "show", "abc", "--transcript"]);
@@ -251,4 +253,96 @@ fn keys_export_and_import() {
     std::fs::remove_dir_all(r.home.join("config/keys")).unwrap();
     let imported = r.json(&["key", "import", file.to_str().unwrap()]);
     assert_eq!(imported["recipient"], shown["recipient"]);
+}
+
+#[test]
+fn scan_reindexes_and_purge_leaves_nothing_behind() {
+    let r = Repo::new();
+    let tdir = r.home.join(".claude/projects/x");
+    std::fs::create_dir_all(&tdir).unwrap();
+    let tpath = tdir.join("s2.jsonl");
+    let line = |text: &str| {
+        format!(
+            r#"{{"type":"user","message":{{"role":"user","content":"{text}"}},"timestamp":"2026-11-14T10:00:00Z"}}"#
+        )
+    };
+    std::fs::write(
+        &tpath,
+        line("Fix the invoice for account ZQXCUSTOMER9981") + "\n",
+    )
+    .unwrap();
+    hook(&r, "Stop", "s2", &tpath);
+    let hits = r.json(&["session", "search", "ZQXCUSTOMER9981"]);
+    assert_eq!(hits.as_array().unwrap().len(), 1);
+
+    // A new project rule makes that a secret. Scan fixes the store and the index.
+    let cfg = r.root.join("inloop.toml");
+    let text = std::fs::read_to_string(&cfg).unwrap().replace(
+        "personal_data = false",
+        "personal_data = false\npatterns = [{ kind = \"customer\", regex = \"ZQXCUSTOMER[0-9]+\" }]",
+    );
+    std::fs::write(&cfg, text).unwrap();
+    let scan = r.json(&["scan"]);
+    assert_eq!(scan["findings"].as_array().unwrap().len(), 1, "{scan}");
+    let hits = r.json(&["session", "search", "ZQXCUSTOMER9981"]);
+    assert!(
+        hits.as_array().unwrap().is_empty(),
+        "still searchable: {hits}"
+    );
+    assert!(!contains(
+        &std::fs::read(r.root.join(".git/inloop/index.sqlite")).unwrap(),
+        "ZQXCUSTOMER9981"
+    ));
+
+    // More conversation, a recapture, then purge: no transcript copy is left.
+    let more = std::fs::read_to_string(&tpath).unwrap() + &line("And the next one") + "\n";
+    std::fs::write(&tpath, more).unwrap();
+    hook(&r, "Stop", "s2", &tpath);
+    r.json(&["session", "purge", "s2"]);
+    let left = walk(&r.home.join("data"));
+    assert!(left.is_empty(), "{left:?}");
+}
+
+#[test]
+fn cherry_picks_get_no_session_trailer() {
+    let r = Repo::new();
+    assert!(r.run(&["init"]).status.success());
+    let tdir = r.home.join(".claude/projects/x");
+    std::fs::create_dir_all(&tdir).unwrap();
+    let tpath = tdir.join("s3.jsonl");
+    std::fs::write(&tpath, transcript(&r.root)).unwrap();
+    let path = format!(
+        "{}:{}",
+        bin_dir().display(),
+        std::env::var("PATH").unwrap_or_default()
+    );
+    let git = |args: &[&str]| {
+        let out = Command::new("git")
+            .arg("-C")
+            .arg(&r.root)
+            .args(args)
+            .env("PATH", &path)
+            .env("HOME", &r.home)
+            .env("INLOOP_CONFIG_DIR", r.home.join("config"))
+            .env("INLOOP_DATA_DIR", r.home.join("data"))
+            .output()
+            .unwrap();
+        assert!(
+            out.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        String::from_utf8_lossy(&out.stdout).into_owned()
+    };
+    // An old commit on a side branch, made with no session running.
+    git(&["checkout", "-q", "-b", "side"]);
+    std::fs::write(r.root.join("old.txt"), "old").unwrap();
+    git(&["add", "old.txt"]);
+    git(&["commit", "-q", "-m", "Old work"]);
+    git(&["checkout", "-q", "main"]);
+    // A session starts, then the old commit is cherry-picked.
+    hook(&r, "SessionStart", "s3", &tpath);
+    git(&["cherry-pick", "side"]);
+    let msg = git(&["log", "-1", "--format=%B"]);
+    assert!(!msg.contains("Session:"), "{msg}");
 }

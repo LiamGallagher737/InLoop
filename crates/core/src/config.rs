@@ -213,7 +213,7 @@ pub fn home_dir() -> Option<PathBuf> {
 
 /// Personal settings that never go in the repo: storage credentials and
 /// where keys live.
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct PersonalConfig {
     /// Overrides for the local session store directory.
@@ -223,11 +223,12 @@ pub struct PersonalConfig {
     pub s3: Option<S3Credentials>,
 }
 
-#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
+/// Never serialised back out, and the secret never appears in Debug.
+#[derive(Clone, Default, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct S3Credentials {
     pub access_key_id: Option<String>,
-    pub secret_access_key: Option<String>,
+    pub secret_access_key: Option<secrecy::SecretString>,
 }
 
 impl std::fmt::Debug for S3Credentials {
@@ -252,9 +253,11 @@ impl PersonalConfig {
         };
         let path = dir.join("config.toml");
         match std::fs::read_to_string(&path) {
-            Ok(text) => toml::from_str(&text).map_err(|e| ConfigError::Parse {
+            // Only the parser's message, never the offending line: this file
+            // holds credentials (rule 4).
+            Ok(text) => toml::from_str(&text).map_err(|e: toml::de::Error| ConfigError::Parse {
                 path,
-                message: e.to_string(),
+                message: e.message().to_string(),
             }),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::default()),
             Err(source) => Err(ConfigError::Read { path, source }),
@@ -292,10 +295,25 @@ mod tests {
     }
 
     #[test]
+    fn personal_config_errors_never_echo_the_line() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::write(
+            tmp.path().join("config.toml"),
+            "[s3]\nsecret_acess_key = \"wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY\"\n",
+        )
+        .unwrap();
+        let text = std::fs::read_to_string(tmp.path().join("config.toml")).unwrap();
+        let err = toml::from_str::<PersonalConfig>(&text)
+            .map_err(|e: toml::de::Error| e.message().to_string());
+        let msg = err.err().unwrap_or_default();
+        assert!(!msg.contains("wJalr"), "{msg}");
+    }
+
+    #[test]
     fn credentials_never_debug_print() {
         let c = S3Credentials {
             access_key_id: Some("AKIAEXAMPLE".into()),
-            secret_access_key: Some("very-secret".into()),
+            secret_access_key: Some(secrecy::SecretString::from("very-secret")),
         };
         let s = format!("{c:?}");
         assert!(!s.contains("very-secret") && !s.contains("AKIAEXAMPLE"));

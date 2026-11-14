@@ -83,6 +83,7 @@ impl Project {
                 continue;
             };
             report.sessions_checked += 1;
+            let mut stale_blob: Option<String> = None;
             let mut found_kinds = kinds(&r.find(&String::from_utf8_lossy(&bytes)));
             if let Some(blob) = store
                 .get_blob(&meta.blob)
@@ -100,8 +101,7 @@ impl Project {
                     let new_blob = store
                         .put_blob(t.get().to_jsonl().as_bytes())
                         .map_err(|e| AppError::Other(e.to_string()))?;
-                    let _ = store.delete_blob(&meta.blob);
-                    meta.blob = new_blob;
+                    stale_blob = Some(std::mem::replace(&mut meta.blob, new_blob));
                 }
             }
             if !found_kinds.is_empty() {
@@ -113,6 +113,10 @@ impl Project {
                 store
                     .put_record("sessions", &id, &json)
                     .map_err(|e| AppError::Other(e.to_string()))?;
+                // Only now that the record points at the new blob.
+                if let Some(b) = stale_blob.take() {
+                    let _ = store.delete_blob(&b);
+                }
                 report.findings.push(ScanFinding {
                     what: format!("session {id}"),
                     kinds: found_kinds,
@@ -121,6 +125,11 @@ impl Project {
             }
         }
         report.board_records_checked += self.scan_board(fix, &mut report.findings)?;
+        // The index holds copies too: rebuild it from what's now stored, so a
+        // secret found here stops being searchable.
+        self.invalidate_decision_index()?;
+        self.decision_set(true)?;
+        self.session_sync()?;
         Ok(report)
     }
 

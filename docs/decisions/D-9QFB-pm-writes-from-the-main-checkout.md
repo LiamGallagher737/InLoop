@@ -18,7 +18,7 @@ D-Y40K says the PM is the only writer of the board and children report through `
 
 ## Decision
 
-Through MCP, `task_new`, `task_update` and `board_fold` work only from the main worktree, where the PM runs. `task_report` and `task_blocked` write their own records (one file each) and never change a task; they find the task from the current branch when no ID is given. `board_fold` (MCP) and `inloop board fold` apply unfolded blockers (setting the blocked status and reason) and reports newer than their task (moving running to review, linking decisions, adding a note). `board_list` shows what is waiting to be folded. The CLI is for the human and isn't restricted.
+Through MCP, `task_new`, `task_update` and `board_fold` work only from the main worktree, where the PM runs. `task_report` and `task_blocked` write their own records (one file each) and never change a task; they find the task from the current branch when no ID is given. `board_fold` (MCP) and `inloop board fold` apply unfolded blockers (setting the blocked status and reason) and reports not yet folded (moving running to review, linking decisions, adding a note), marking each folded. `board_list` shows what is waiting to be folded. The CLI is for the human and isn't restricted.
 
 ## Consequences
 

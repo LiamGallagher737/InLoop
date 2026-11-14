@@ -62,6 +62,13 @@ impl From<Hit> for SearchResult {
 impl Project {
     /// Every decision InLoop can see, with provenance; also refreshes the
     /// index.
+    /// Forget the decisions fingerprint so the next refresh re-indexes
+    /// (and re-redacts) everything.
+    pub fn invalidate_decision_index(&self) -> Result<(), AppError> {
+        self.index()?.set_state("decisions-fingerprint", "")?;
+        Ok(())
+    }
+
     pub fn decision_set(&self, include_unmerged: bool) -> Result<DecisionSet, AppError> {
         let mut set = scan(
             &self.repo,
@@ -105,7 +112,26 @@ impl Project {
                 }
             })
             .collect();
-        self.index()?.replace_all(Kind::Decision, &docs)?;
+        // Skip the work when nothing changed since the last refresh.
+        let fingerprint = {
+            use std::hash::{Hash, Hasher};
+            let mut h = std::hash::DefaultHasher::new();
+            for d in &docs {
+                serde_json::to_string(d).unwrap_or_default().hash(&mut h);
+            }
+            format!("{:x}", h.finish())
+        };
+        let mut index = self.index()?;
+        if index.get_state("decisions-fingerprint")?.as_deref() == Some(fingerprint.as_str()) {
+            return Ok(());
+        }
+        let r = self.redactor()?;
+        let mut redacted = Vec::with_capacity(docs.len());
+        for d in docs {
+            redacted.push(r.redact(d).map_err(|e| AppError::Redactor(e.to_string()))?);
+        }
+        index.replace_all(Kind::Decision, &redacted)?;
+        index.set_state("decisions-fingerprint", &fingerprint)?;
         Ok(())
     }
 
@@ -155,7 +181,32 @@ impl Project {
             self.decision_set(true)?;
         }
         let hits = self.index()?.search(query, kinds, limit)?;
-        Ok(hits.into_iter().map(SearchResult::from).collect())
+        let mut out: Vec<SearchResult> = hits.into_iter().map(SearchResult::from).collect();
+        // Session provenance is worked out now, from the commits.
+        for h in out.iter_mut().filter(|h| h.kind == Kind::Session) {
+            let get = |k: &str| h.meta.get(k).and_then(|v| v.as_str()).map(str::to_string);
+            let commits: Vec<String> = h
+                .meta
+                .get("commits")
+                .and_then(|v| v.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|c| c.as_str().map(str::to_string))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let p = self.session_provenance_parts(
+                get("branch").as_deref(),
+                get("worktree").as_deref(),
+                &commits,
+                get("task").as_deref(),
+            );
+            h.meta.remove("commits");
+            if let Ok(v) = serde_json::to_value(p) {
+                h.meta.insert("provenance".into(), v);
+            }
+        }
+        Ok(out)
     }
 
     pub fn decision_new(&self, new: NewDecision) -> Result<Written, AppError> {

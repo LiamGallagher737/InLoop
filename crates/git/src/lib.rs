@@ -161,18 +161,35 @@ impl Repo {
         Ok("main".to_string())
     }
 
-    /// The ref to compare against for "merged": the local main branch if it
-    /// exists, else `origin/<main>`. `None` if neither exists yet.
+    /// The ref to compare against for "merged": whichever of the local main
+    /// branch and `origin/<main>` is further ahead (people working in
+    /// worktrees rarely update local main). When they have diverged, the
+    /// local branch. `None` if neither exists yet.
     pub fn main_ref(&self, main_branch: &str) -> Result<Option<String>, GitError> {
-        for r in [
-            format!("refs/heads/{main_branch}"),
-            format!("refs/remotes/origin/{main_branch}"),
-        ] {
-            if self.rev_parse(&r)?.is_some() {
-                return Ok(Some(r));
+        let local = format!("refs/heads/{main_branch}");
+        let remote = format!("refs/remotes/origin/{main_branch}");
+        let l = self.rev_parse(&local)?;
+        let r = self.rev_parse(&remote)?;
+        Ok(match (l, r) {
+            (Some(lc), Some(rc)) => {
+                if lc != rc && self.is_ancestor(&lc, &rc)? {
+                    Some(remote)
+                } else {
+                    Some(local)
+                }
             }
-        }
-        Ok(None)
+            (Some(_), None) => Some(local),
+            (None, Some(_)) => Some(remote),
+            (None, None) => None,
+        })
+    }
+
+    /// The merge base of two revisions, if they share history.
+    pub fn merge_base(&self, a: &str, b: &str) -> Result<Option<String>, GitError> {
+        Ok(self
+            .try_run(&["merge-base", a, b])?
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty()))
     }
 
     /// Resolve `rev` to an object ID, or `None` if it doesn't exist.
@@ -224,6 +241,14 @@ impl Repo {
     /// `main_ref`: the ones that may hold work not on main yet.
     pub fn unmerged_branches(&self, main_ref: &str) -> Result<Vec<BranchRef>, GitError> {
         let no_merged = format!("--no-merged={main_ref}");
+        let short = main_ref
+            .strip_prefix("refs/heads/")
+            .or_else(|| main_ref.strip_prefix("refs/remotes/origin/"))
+            .unwrap_or(main_ref);
+        let main_names = [
+            format!("refs/heads/{short}"),
+            format!("refs/remotes/origin/{short}"),
+        ];
         let text = self.run(&[
             "for-each-ref",
             "--format=%(refname)%00%(refname:short)%00%(objectname)%00%(symref)",
@@ -235,6 +260,10 @@ impl Repo {
         for line in text.lines() {
             let parts: Vec<&str> = line.split('\0').collect();
             if parts.len() < 4 || !parts[3].is_empty() || parts[0].ends_with("/HEAD") {
+                continue;
+            }
+            // The main branch itself, local or remote, is never "unmerged".
+            if main_names.iter().any(|m| m == parts[0]) {
                 continue;
             }
             out.push(BranchRef {

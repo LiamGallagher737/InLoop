@@ -350,6 +350,7 @@ pub fn new_report(input: NewReport, id: Id, now: jiff::Timestamp) -> Report {
         decisions: input.decisions,
         plan_changes: input.plan_changes,
         summary: input.summary,
+        folded: false,
     }
 }
 

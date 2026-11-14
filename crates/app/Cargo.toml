@@ -20,7 +20,7 @@ inloop-sessions = { path = "../sessions" }
 inloop-store = { path = "../store" }
 jiff.workspace = true
 serde.workspace = true
-serde_json.workspace = true
+serde_json = { version = "1", features = ["preserve_order"] }
 thiserror.workspace = true
 
 [dev-dependencies]

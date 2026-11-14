@@ -211,7 +211,7 @@ impl Project {
                         region: s.region.clone(),
                         prefix: s.prefix.clone().unwrap_or_else(|| safe_name(&self.name)),
                         access_key_id: creds.access_key_id,
-                        secret_access_key: creds.secret_access_key.map(Into::into),
+                        secret_access_key: creds.secret_access_key,
                     })
                     .map_err(|e| AppError::Other(e.to_string()))?,
                 )
@@ -251,7 +251,16 @@ impl Project {
             session: ev.session_id.clone(),
             event: ev.event.clone(),
             ok: res.is_ok(),
-            error: res.as_ref().err().map(|e| e.to_string()),
+            // The log is stored data too: errors go through the redactor,
+            // and if that isn't possible only a generic note is kept.
+            error: res.as_ref().err().map(|e| {
+                self.redactor()
+                    .ok()
+                    .and_then(|r| r.redact_text(&e.to_string()).ok())
+                    .unwrap_or_else(|| {
+                        "capture failed (details withheld: redaction unavailable)".into()
+                    })
+            }),
         });
         res
     }
@@ -296,7 +305,7 @@ impl Project {
             && m.modified()
                 .ok()
                 .and_then(|t| t.elapsed().ok())
-                .is_some_and(|age| age > Duration::from_secs(600))
+                .is_some_and(|age| age > Duration::from_secs(120))
         {
             let _ = std::fs::remove_file(&lock);
         }
@@ -315,7 +324,23 @@ impl Project {
                 redactions: BTreeMap::new(),
             });
         }
-        let result = self.capture_locked(ev, source, &id, &path, previous.map(|p| p.blob));
+        // Captures arriving while this one runs give up; so when this one
+        // finishes, capture again if the transcript grew meanwhile, so the
+        // end of a session is never lost.
+        let mut previous_blob = previous.map(|p| p.blob);
+        let mut stamp = stamp;
+        let mut result = self.capture_locked(ev, source, &id, &path, previous_blob.clone());
+        for _ in 0..5 {
+            let now = file_stamp(&path);
+            match &result {
+                Ok(o) if now.is_some() && now != stamp => {
+                    previous_blob = o.blob.clone();
+                    stamp = now;
+                    result = self.capture_locked(ev, source, &id, &path, previous_blob.clone());
+                }
+                _ => break,
+            }
+        }
         let _ = std::fs::remove_file(&lock);
         let out = result?;
         if let (Some((size, ns)), Some(blob)) = (stamp, &out.blob) {
@@ -351,74 +376,89 @@ impl Project {
             .redact(transcript)
             .map_err(|e| AppError::Redactor(e.to_string()))?;
         let store = self.store()?;
+        // The blob the stored record points at now: the one to replace.
+        let stored_old = self.load_meta(&store, id).ok().flatten().map(|m| m.blob);
         let (blob, jsonl) = store_transcript(&store, &redacted)?;
-        let mut redactions = count_markers(&jsonl);
-        for (k, n) in before {
-            if let Some(v) = redactions.get_mut(&k) {
-                *v = v.saturating_sub(n);
+        let built = (|| -> Result<(Redacted<SessionMeta>, BTreeMap<String, usize>), AppError> {
+            let mut redactions = count_markers(&jsonl);
+            for (k, n) in before {
+                if let Some(v) = redactions.get_mut(&k) {
+                    *v = v.saturating_sub(n);
+                }
             }
-        }
-        redactions.retain(|_, v| *v > 0);
+            redactions.retain(|_, v| *v > 0);
 
-        let worktree = ev
-            .cwd
-            .as_ref()
-            .and_then(|c| inloop_git::Repo::discover(c).ok())
-            .map(|r| r.root)
-            .unwrap_or_else(|| self.repo.root.clone());
-        let summary = {
-            let mut roots = vec![worktree.to_string_lossy().into_owned()];
-            if let Some(c) = &ev.cwd {
-                roots.push(c.to_string_lossy().into_owned());
-            }
-            for r in roots.clone() {
-                if let Ok(c) = Path::new(&r).canonicalize() {
+            let worktree = ev
+                .cwd
+                .as_ref()
+                .and_then(|c| inloop_git::Repo::discover(c).ok())
+                .map(|r| r.root)
+                .unwrap_or_else(|| self.repo.root.clone());
+            let summary = {
+                let mut roots = vec![worktree.to_string_lossy().into_owned()];
+                if let Some(c) = &ev.cwd {
                     roots.push(c.to_string_lossy().into_owned());
                 }
-                // macOS: /var is /private/var.
-                if let Some(rest) = r.strip_prefix("/private") {
-                    roots.push(rest.to_string());
+                for r in roots.clone() {
+                    if let Ok(c) = Path::new(&r).canonicalize() {
+                        roots.push(c.to_string_lossy().into_owned());
+                    }
+                    // macOS: /var is /private/var.
+                    if let Some(rest) = r.strip_prefix("/private") {
+                        roots.push(rest.to_string());
+                    }
                 }
+                roots.sort_by_key(|r| std::cmp::Reverse(r.len()));
+                roots.dedup();
+                let mut s = Summary::build(redacted.get(), &roots);
+                s.decisions = self.decisions_from_session(id);
+                s
+            };
+            let (started, ended) = redacted.get().time_span();
+            let wt_repo = inloop_git::Repo::discover(&worktree).ok();
+            let branch = wt_repo
+                .as_ref()
+                .and_then(|r| r.current_branch().ok().flatten());
+            let head = wt_repo
+                .as_ref()
+                .and_then(|r| r.head_commit().ok().flatten());
+            let commits = self.commits_for_session(id);
+            let meta = SessionMeta {
+                id: id.to_string(),
+                source: source.name().to_string(),
+                project: self.name.clone(),
+                task: self.task_for_branch(branch.as_deref()),
+                branch,
+                worktree: Some(worktree.to_string_lossy().into_owned()),
+                started,
+                ended,
+                captured_at: inloop_core::now().to_string(),
+                event: ev.event.clone(),
+                head,
+                commits,
+                blob: blob.clone(),
+                transcript_bytes: jsonl.len(),
+                redactions: redactions.clone(),
+                summary,
+            };
+            let meta = redactor
+                .redact(meta)
+                .map_err(|e| AppError::Redactor(e.to_string()))?;
+            store_meta(&store, &meta)?;
+            Ok((meta, redactions))
+        })();
+        let (meta, redactions) = match built {
+            Ok(x) => x,
+            Err(e) => {
+                // Don't leave an unreferenced copy of the transcript behind.
+                let _ = store.delete_blob(&blob);
+                return Err(e);
             }
-            roots.sort_by_key(|r| std::cmp::Reverse(r.len()));
-            roots.dedup();
-            let mut s = Summary::build(redacted.get(), &roots);
-            s.decisions = self.decisions_from_session(id);
-            s
         };
-        let (started, ended) = redacted.get().time_span();
-        let wt_repo = inloop_git::Repo::discover(&worktree).ok();
-        let branch = wt_repo
-            .as_ref()
-            .and_then(|r| r.current_branch().ok().flatten());
-        let head = wt_repo
-            .as_ref()
-            .and_then(|r| r.head_commit().ok().flatten());
-        let commits = self.commits_for_session(id);
-        let meta = SessionMeta {
-            id: id.to_string(),
-            source: source.name().to_string(),
-            project: self.name.clone(),
-            task: self.task_for_branch(branch.as_deref()),
-            branch,
-            worktree: Some(worktree.to_string_lossy().into_owned()),
-            started,
-            ended,
-            captured_at: inloop_core::now().to_string(),
-            event: ev.event.clone(),
-            head,
-            commits,
-            blob: blob.clone(),
-            transcript_bytes: jsonl.len(),
-            redactions: redactions.clone(),
-            summary,
-        };
-        let meta = redactor
-            .redact(meta)
-            .map_err(|e| AppError::Redactor(e.to_string()))?;
-        store_meta(&store, &meta)?;
-        if let Some(old) = previous_blob.filter(|b| *b != blob) {
-            let _ = store.delete_blob(&old);
+        for old in [stored_old, previous_blob].into_iter().flatten() {
+            if old != blob {
+                let _ = store.delete_blob(&old);
+            }
         }
         self.index_session(meta.get())?;
         Ok(CaptureOutcome {
@@ -453,26 +493,46 @@ impl Project {
             .unwrap_or_default()
     }
 
-    /// Where a session's work stands: merged if its HEAD reached main.
+    /// Where a session's work stands: merged only when it made commits and
+    /// every one of them is on main. A session with no commits (or with
+    /// work only on a branch) is unmerged.
     pub fn session_provenance(&self, m: &SessionMeta) -> Provenance {
+        self.session_provenance_parts(
+            m.branch.as_deref(),
+            m.worktree.as_deref(),
+            &m.commits,
+            m.task.as_deref(),
+        )
+    }
+
+    pub fn session_provenance_parts(
+        &self,
+        branch: Option<&str>,
+        worktree: Option<&str>,
+        commits: &[String],
+        task: Option<&str>,
+    ) -> Provenance {
         let main_ref = self.repo.main_ref(&self.main_branch).ok().flatten();
-        let merged = match (&m.head, &main_ref) {
-            (Some(h), Some(r)) => self.repo.is_ancestor(h, r).unwrap_or(false),
+        let merged = match &main_ref {
+            Some(r) if !commits.is_empty() => commits
+                .iter()
+                .all(|c| self.repo.is_ancestor(c, r).unwrap_or(false)),
             _ => false,
         };
         if merged {
             return Provenance::merged();
         }
-        let mut p = Provenance::unmerged(m.branch.clone(), m.worktree.as_ref().map(PathBuf::from));
-        p.task = m
-            .task
-            .clone()
-            .or_else(|| self.task_for_branch(m.branch.as_deref()));
+        let mut p = Provenance::unmerged(branch.map(str::to_string), worktree.map(PathBuf::from));
+        p.task = task
+            .map(str::to_string)
+            .or_else(|| self.task_for_branch(branch));
         p
     }
 
-    fn session_doc(&self, m: &SessionMeta) -> Doc {
-        Doc {
+    /// The index document for a session, redacted. Provenance isn't stored:
+    /// it's worked out when results are read, so it never goes stale.
+    fn session_doc(&self, m: &SessionMeta) -> Result<Redacted<Doc>, AppError> {
+        let doc = Doc {
             kind: Kind::Session,
             id: m.id.clone(),
             title: m.summary.title(),
@@ -482,13 +542,19 @@ impl Project {
                 "started": m.started,
                 "ended": m.ended,
                 "branch": m.branch,
-                "provenance": self.session_provenance(m),
+                "worktree": m.worktree,
+                "commits": m.commits,
+                "task": m.task,
             }),
-        }
+        };
+        self.redactor()?
+            .redact(doc)
+            .map_err(|e| AppError::Redactor(e.to_string()))
     }
 
     fn index_session(&self, m: &SessionMeta) -> Result<(), AppError> {
-        self.index()?.upsert(&self.session_doc(m))?;
+        let doc = self.session_doc(m)?;
+        self.index()?.upsert(&doc)?;
         Ok(())
     }
 
@@ -514,7 +580,7 @@ impl Project {
         let mut docs = Vec::new();
         for id in &ids {
             if let Some(m) = self.load_meta(&store, id)? {
-                docs.push(self.session_doc(&m));
+                docs.push(self.session_doc(&m)?);
             }
         }
         self.index()?.replace_all(Kind::Session, &docs)?;
@@ -595,7 +661,15 @@ impl Project {
             .delete_record(RECORD_KIND, &id)
             .map_err(|e| AppError::Other(e.to_string()))?;
         self.index()?.remove(Kind::Session, &id)?;
-        let _ = std::fs::remove_file(self.sessions_state().join(format!("{id}.json")));
+        // A blob this machine stored that the record no longer pointed at.
+        let state = self.sessions_state().join(format!("{id}.json"));
+        if let Some(st) = std::fs::read(&state)
+            .ok()
+            .and_then(|b| serde_json::from_slice::<CaptureState>(&b).ok())
+        {
+            let _ = store.delete_blob(&st.blob);
+        }
+        let _ = std::fs::remove_file(state);
         Ok(id)
     }
 

@@ -34,6 +34,8 @@ Summaries are built by InLoop from the redacted transcript with no model call (D
 
 Together these give the chain from a decision, to the conversation where it was made, to the commits that came out of it.
 
+A session's provenance follows its commits: it is `merged` only when it made commits and all of them are on the main branch (whichever of local `main` and `origin/main` is further ahead), and `unmerged` otherwise. It is worked out when results are read, never stored. The trailer hook skips commits replayed by rebase, cherry-pick or revert.
+
 ## Storage
 
 Storage is designed as if InLoop may become a product used by people outside Liam's projects, so it is not tied to any one provider or to anything Adpatch uses (D-T1C2).

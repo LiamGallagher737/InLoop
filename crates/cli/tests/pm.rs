@@ -162,11 +162,28 @@ fn a_full_batch_runs_on_the_board() {
         ],
     );
     assert!(out.status.success(), "{}", stderr(&out));
+    // A second report before the PM gets to it: neither may be lost.
+    let out = r.run_in(
+        &wt,
+        &[
+            "--json",
+            "task",
+            "report",
+            "--summary",
+            "Also added docs comments",
+        ],
+    );
+    assert!(out.status.success(), "{}", stderr(&out));
     let board = r.json(&["board"]);
-    assert_eq!(board["unfolded_reports"].as_array().unwrap().len(), 1);
+    assert_eq!(board["unfolded_reports"].as_array().unwrap().len(), 2);
 
-    // The PM folds it in: A goes to review with the decision linked.
-    r.json(&["board", "fold"]);
+    // The PM folds them in: A goes to review with the decision linked.
+    let folded = r.json(&["board", "fold"]);
+    assert_eq!(
+        folded["reports_folded"].as_array().unwrap().len(),
+        2,
+        "{folded}"
+    );
     let shown = r.json(&["task", "show", &a_id]);
     assert_eq!(shown["status"], "review");
     assert_eq!(shown["decisions"][0], dec["id"]);

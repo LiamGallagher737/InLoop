@@ -25,6 +25,10 @@ pub enum Place {
         current: bool,
         /// Not committed on the worktree's branch (new or changed).
         uncommitted: bool,
+        /// Committed, and the branch never changed it since it left main:
+        /// whatever main says now is what counts.
+        #[serde(skip)]
+        untouched: bool,
         #[serde(skip)]
         head: Option<String>,
     },
@@ -135,6 +139,8 @@ pub fn scan(repo: &Repo, opts: &ScanOptions<'_>) -> Result<DecisionSet, GitError
     let mut checked_out: HashSet<String> = HashSet::new();
     let mut disk: Vec<(Place, String, String)> = Vec::new(); // place, name, text
     let mut head_blob_lookups: Vec<(usize, String)> = Vec::new();
+    // Disk entries whose HEAD blob equals the merge-base blob.
+    let mut same_as_base: HashSet<usize> = HashSet::new();
     for wt in repo.worktrees()? {
         if wt.bare {
             continue;
@@ -154,6 +160,17 @@ pub fn scan(repo: &Repo, opts: &ScanOptions<'_>) -> Result<DecisionSet, GitError
                 .collect(),
             None => HashMap::new(),
         };
+        let base_files: HashMap<String, String> = match (&main_ref, &wt.head) {
+            (Some(m), Some(h)) => match repo.merge_base(m, h)? {
+                Some(base) => repo
+                    .list_dir(&base, dir)?
+                    .into_iter()
+                    .map(|f| (f.name, f.blob))
+                    .collect(),
+                None => HashMap::new(),
+            },
+            _ => HashMap::new(),
+        };
         let Ok(rd) = std::fs::read_dir(wt.path.join(dir)) else {
             continue;
         };
@@ -169,6 +186,9 @@ pub fn scan(repo: &Repo, opts: &ScanOptions<'_>) -> Result<DecisionSet, GitError
                 continue;
             };
             if let Some(blob) = head_files.get(&name) {
+                if base_files.get(&name) == Some(blob) {
+                    same_as_base.insert(disk.len());
+                }
                 head_blob_lookups.push((disk.len(), blob.clone()));
             }
             disk.push((
@@ -177,6 +197,7 @@ pub fn scan(repo: &Repo, opts: &ScanOptions<'_>) -> Result<DecisionSet, GitError
                     branch: wt.branch.clone(),
                     current: is_current,
                     uncommitted: true, // until shown to match HEAD
+                    untouched: false,
                     head: wt.head.clone(),
                 },
                 name,
@@ -220,9 +241,14 @@ pub fn scan(repo: &Repo, opts: &ScanOptions<'_>) -> Result<DecisionSet, GitError
     for (i, blob) in &head_blob_lookups {
         if let (Some(committed), Some(entry)) = (blobs.get(blob), disk.get_mut(*i))
             && *committed == entry.2
-            && let Place::Worktree { uncommitted, .. } = &mut entry.0
+            && let Place::Worktree {
+                uncommitted,
+                untouched,
+                ..
+            } = &mut entry.0
         {
             *uncommitted = false;
+            *untouched = same_as_base.contains(i);
         }
     }
 
@@ -307,9 +333,20 @@ fn resolve(
                 copies,
             });
         }
-        let Some(&best) = idxs.iter().min_by_key(|i| priority(&found[**i].place)) else {
+        let Some(&first) = idxs.iter().min_by_key(|i| priority(&found[**i].place)) else {
             continue;
         };
+        // A worktree copy its branch never changed defers to main's copy
+        // when main has moved on (a worktree behind main).
+        let mut best = first;
+        if let Place::Worktree {
+            untouched: true, ..
+        } = &found[best].place
+            && let Some(&m) = idxs.iter().find(|i| found[**i].place == Place::Main)
+            && found[m].text != found[best].text
+        {
+            best = m;
+        }
         let f = &found[best];
         let Ok(decision) = f.parsed.clone() else {
             continue;
@@ -322,6 +359,7 @@ fn resolve(
                 branch,
                 current: _,
                 uncommitted,
+                untouched: _,
                 head,
             } => {
                 let file = path.join(dir).join(&f.file_name);
@@ -507,5 +545,86 @@ mod tests {
         .unwrap();
         assert!(only.get("D-DDDD").is_none());
         assert!(only.get("D-CCCC").is_none());
+    }
+
+    #[test]
+    fn a_worktree_behind_main_sees_mains_version() {
+        let tmp = tempfile::tempdir().unwrap();
+        let main = tmp.path().join("main");
+        std::fs::create_dir_all(main.join("docs/decisions")).unwrap();
+        git(&main, &["init", "-q", "-b", "main"]);
+        write(&main, "D-AAAA", "Proposed then accepted");
+        git(&main, &["add", "."]);
+        git(&main, &["commit", "-q", "-m", "one"]);
+        let wt = tmp.path().join("feat");
+        git(
+            &main,
+            &["worktree", "add", "-q", "-b", "feat", wt.to_str().unwrap()],
+        );
+        // Main accepts it after feat branched off.
+        let f = main.join("docs/decisions/D-AAAA-proposed-then-accepted.md");
+        let text = std::fs::read_to_string(&f)
+            .unwrap()
+            .replace("status: proposed", "status: rejected");
+        std::fs::write(&f, text).unwrap();
+        git(&main, &["commit", "-qam", "reject"]);
+
+        let repo = Repo::discover(&wt).unwrap();
+        let opts = ScanOptions {
+            decisions_dir: "docs/decisions",
+            main_branch: "main",
+            include_unmerged: true,
+        };
+        let set = scan(&repo, &opts).unwrap();
+        let e = set.get("D-AAAA").unwrap();
+        assert_eq!(e.decision.status, crate::Status::Rejected);
+        assert_eq!(e.provenance.state, State::Merged);
+
+        // If feat changes it, feat's copy is its own unmerged work again.
+        let wf = wt.join("docs/decisions/D-AAAA-proposed-then-accepted.md");
+        let t = std::fs::read_to_string(&wf)
+            .unwrap()
+            .replace("tags: []", "tags: [feat]");
+        std::fs::write(&wf, t).unwrap();
+        let set = scan(&repo, &opts).unwrap();
+        let e = set.get("D-AAAA").unwrap();
+        assert_eq!(e.provenance.state, State::Unmerged);
+        assert_eq!(e.decision.tags, vec!["feat"]);
+    }
+
+    #[test]
+    fn origin_main_ahead_of_local_main_counts_as_merged() {
+        let tmp = tempfile::tempdir().unwrap();
+        let main = tmp.path().join("main");
+        std::fs::create_dir_all(main.join("docs/decisions")).unwrap();
+        git(&main, &["init", "-q", "-b", "main"]);
+        write(&main, "D-AAAA", "First");
+        git(&main, &["add", "."]);
+        git(&main, &["commit", "-q", "-m", "one"]);
+        // Someone else's work lands on origin/main; local main is stale.
+        git(&main, &["checkout", "-q", "-b", "tmp"]);
+        write(&main, "D-BBBB", "From a co-founder");
+        git(&main, &["add", "."]);
+        git(&main, &["commit", "-q", "-m", "two"]);
+        git(&main, &["update-ref", "refs/remotes/origin/main", "HEAD"]);
+        git(&main, &["checkout", "-q", "main"]);
+        git(&main, &["branch", "-q", "-D", "tmp"]);
+
+        let repo = Repo::discover(&main).unwrap();
+        assert_eq!(
+            repo.main_ref("main").unwrap().as_deref(),
+            Some("refs/remotes/origin/main")
+        );
+        let set = scan(
+            &repo,
+            &ScanOptions {
+                decisions_dir: "docs/decisions",
+                main_branch: "main",
+                include_unmerged: true,
+            },
+        )
+        .unwrap();
+        let b = set.get("D-BBBB").unwrap();
+        assert_eq!(b.provenance.state, State::Merged, "{:?}", b.provenance);
     }
 }

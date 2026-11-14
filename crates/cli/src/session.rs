@@ -332,6 +332,23 @@ fn trailer(ctx: &Ctx, file: &std::path::Path, source: Option<&str>) {
     let Some(id) = p.current_session() else {
         return;
     };
+    // Rebase, cherry-pick and revert replay old commits through this hook;
+    // they aren't this session's work.
+    if let Ok(Some(git_dir)) = p.repo.try_run(&["rev-parse", "--absolute-git-dir"]) {
+        let g = std::path::Path::new(git_dir.trim());
+        if [
+            "rebase-merge",
+            "rebase-apply",
+            "CHERRY_PICK_HEAD",
+            "REVERT_HEAD",
+            "sequencer",
+        ]
+        .iter()
+        .any(|f| g.join(f).exists())
+        {
+            return;
+        }
+    }
     let _ = p.repo.try_run(&[
         "interpret-trailers",
         "--in-place",
