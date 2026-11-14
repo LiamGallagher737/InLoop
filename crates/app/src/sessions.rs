@@ -71,6 +71,19 @@ pub struct SessionStatus {
     pub hooks_installed: bool,
 }
 
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn counts_only_real_markers() {
+        let m = super::count_markers(
+            r#"a [REDACTED:github-pat] b "[REDACTED:" + x] [REDACTED:email] [REDACTED:github-pat]"#,
+        );
+        assert_eq!(m.get("github-pat"), Some(&2));
+        assert_eq!(m.get("email"), Some(&1));
+        assert_eq!(m.len(), 2);
+    }
+}
+
 #[derive(Serialize, Deserialize, Default)]
 struct CaptureState {
     size: u64,
@@ -115,11 +128,17 @@ fn count_markers(text: &str) -> BTreeMap<String, usize> {
     let mut rest = text;
     while let Some(i) = rest.find("[REDACTED:") {
         let after = &rest[i + 10..];
-        if let Some(end) = after.find(']') {
-            *out.entry(after[..end].to_string()).or_insert(0) += 1;
-            rest = &after[end..];
+        // A real marker's kind is 1 to 64 of [A-Za-z0-9_.-] then `]`.
+        let len = after
+            .bytes()
+            .take(65)
+            .take_while(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'.' | b'-'))
+            .count();
+        if (1..=64).contains(&len) && after.as_bytes().get(len) == Some(&b']') {
+            *out.entry(after[..len].to_string()).or_insert(0) += 1;
+            rest = &after[len..];
         } else {
-            break;
+            rest = after;
         }
     }
     out
