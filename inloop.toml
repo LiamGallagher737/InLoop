@@ -1,0 +1,45 @@
+# InLoop's own project config. Draft: no CLI reads this yet.
+# The format is described in docs/07-config.md. Keep the two in step.
+
+[project]
+name = "InLoop"
+main_branch = "main"
+
+[decisions]
+dir = "docs/decisions"   # D-SJBG (proposed)
+id_prefix = "D"
+id_length = 4            # Crockford base32 characters after the prefix (D-11JK)
+
+[checks]
+# Commands an agent runs before saying work is done.
+commands = [
+  "cargo fmt --all -- --check",
+  "cargo clippy --workspace --all-targets -- -D warnings",
+  "cargo test --workspace",
+]
+
+[sessions]
+backend = "local"        # "local" or "s3" (docs/03)
+
+[redaction]
+# Extra files whose values are always redacted, on top of the defaults (docs/04).
+known_value_files = [".env"]
+
+# The optional project manager layer (docs/05). Off unless enabled. InLoop
+# itself is developed with a PM agent, so it is on here.
+[pm]
+enabled = true
+
+# Files only one running task may touch at a time. Tasks whose "touches"
+# overlap a group are flagged before they are proposed together.
+[[pm.conflict_groups]]
+name = "workspace manifests"
+paths = ["Cargo.toml", "Cargo.lock"]
+
+[[pm.conflict_groups]]
+name = "core types"
+paths = ["crates/core/**"]
+
+[[pm.conflict_groups]]
+name = "redaction"
+paths = ["crates/redact/**"]
