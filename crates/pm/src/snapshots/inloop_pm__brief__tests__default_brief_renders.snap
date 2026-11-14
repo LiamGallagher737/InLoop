@@ -1,0 +1,46 @@
+---
+source: src/brief.rs
+expression: r.text
+---
+# T-4M1P: Add full text search
+
+You are working on one task for example, in your own worktree on branch `task/search`. Another agent (the project manager) reviews your work, and a human decides when it lands.
+
+## The task
+
+Index decision bodies with FTS5 and expose `search`.
+
+## Before you start
+
+- Read `CLAUDE.md` and the docs it points to for the areas you will change.
+- Search the project's decisions (`decision_search`) for anything that bears on this task, and follow them.
+
+## Paths you may change
+
+- `crates/index/**`
+- `docs/06-cli-and-mcp.md`
+
+Stay inside these paths. If the task needs changes elsewhere, stop and report it with `task_blocked` rather than spreading out; another task may own those files.
+
+## Decisions relevant to this task
+
+- D-7KQ2 Use SQLite FTS5 for search [accepted]
+- D-9XYZ Rank by recency [proposed] (not merged yet, so not settled: it may still change)
+
+## While you work
+
+- Record design choices with `decision_new`. Record one as `accepted` only when a human made it, quoting them in `basis`; anything you chose yourself is `proposed`.
+- Keep commits small and on `task/search`. Don't push, merge or rebase onto main; the project manager handles landing once the human agrees.
+
+## Checks
+
+Run these before you report, and fix what fails:
+
+- `cargo test --workspace`
+- `cargo fmt --check`
+
+## When you finish
+
+When you are done, call `task_report` once with: `done` (what is finished), `not_done` (anything left or skipped), `checks` (each command, whether it passed, and a note if not), `decisions` (IDs you recorded), `plan_changes` (anything the project manager should change in the plan) and a short `summary`. Be plain about what doesn't work.
+
+If you get stuck on something you can't resolve yourself (another task, an outside service, or a question only a human can answer), call `task_blocked` with the kind, what you are blocked on and the details, then stop and wait.

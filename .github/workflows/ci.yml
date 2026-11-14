@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: git config --global user.name ci && git config --global user.email ci@example.com
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      # Includes the redaction corpus: any missed fake secret fails the build.
+      - run: cargo test --workspace
+      - run: cargo test -p inloop-redact --release -- --ignored perf
+      - run: cargo run -q -- lint

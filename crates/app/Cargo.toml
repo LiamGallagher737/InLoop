@@ -15,6 +15,7 @@ inloop-git = { path = "../git" }
 inloop-decisions = { path = "../decisions" }
 inloop-index = { path = "../index" }
 inloop-redact = { path = "../redact" }
+inloop-pm = { path = "../pm" }
 inloop-sessions = { path = "../sessions" }
 inloop-store = { path = "../store" }
 jiff.workspace = true

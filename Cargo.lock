@@ -1433,6 +1433,7 @@ dependencies = [
  "inloop-decisions",
  "inloop-git",
  "inloop-index",
+ "inloop-pm",
  "inloop-redact",
  "inloop-sessions",
  "inloop-store",
@@ -1455,6 +1456,7 @@ dependencies = [
  "inloop-git",
  "inloop-index",
  "inloop-mcp",
+ "inloop-pm",
  "inloop-sessions",
  "inloop-store",
  "insta",
@@ -1521,12 +1523,28 @@ dependencies = [
  "inloop-core",
  "inloop-decisions",
  "inloop-index",
+ "inloop-pm",
  "insta",
  "rmcp",
  "serde",
  "serde_json",
  "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "inloop-pm"
+version = "0.1.0"
+dependencies = [
+ "globset",
+ "inloop-core",
+ "inloop-redact",
+ "insta",
+ "jiff",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.21",
 ]
 
 [[package]]

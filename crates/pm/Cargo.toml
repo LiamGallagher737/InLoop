@@ -1,0 +1,28 @@
+[package]
+name = "inloop-pm"
+description = "The optional project manager layer for InLoop: the work board, claims, conflict checks, briefs and reports"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "inloop_pm"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+inloop-core = { path = "../core" }
+inloop-redact = { path = "../redact" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+globset = "0.4"
+jiff = { version = "0.2", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3"
+insta = "1"
+

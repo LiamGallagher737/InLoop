@@ -125,7 +125,7 @@ impl Project {
     }
 
     /// Scan PM board records. Filled in by the PM layer.
-    fn scan_board(&self, _fix: bool, _findings: &mut Vec<ScanFinding>) -> Result<usize, AppError> {
-        Ok(0)
+    fn scan_board(&self, fix: bool, findings: &mut Vec<ScanFinding>) -> Result<usize, AppError> {
+        self.scan_board_impl(fix, findings)
     }
 }

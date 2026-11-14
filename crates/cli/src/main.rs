@@ -5,12 +5,13 @@ mod dec;
 mod hooks;
 mod init;
 mod output;
+mod pm;
 mod session;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
 use inloop_app::Project;
 use serde::Serialize;
 
@@ -53,6 +54,14 @@ pub enum Cmd {
         #[arg(long)]
         fix: bool,
     },
+    /// The PM work board (only when [pm] enabled = true).
+    Board {
+        #[command(subcommand)]
+        cmd: Option<pm::BoardCmd>,
+    },
+    /// PM tasks: new, show, update, brief, check, report, blocked (only when [pm] enabled = true).
+    #[command(subcommand)]
+    Task(pm::TaskCmd),
     /// Search decisions and sessions together.
     Search {
         /// Words to search for.
@@ -102,7 +111,22 @@ impl Ctx {
 }
 
 fn main() -> ExitCode {
-    let cli = Cli::parse();
+    // The PM commands only show in help when the project turns the layer on
+    // (D-N6YH). They still parse, and refuse with a clear message.
+    let pm_on = std::env::current_dir()
+        .ok()
+        .and_then(|d| Project::open(&d).ok())
+        .is_some_and(|p| p.pm_enabled());
+    let mut command = Cli::command();
+    if !pm_on {
+        command = command
+            .mut_subcommand("board", |c| c.hide(true))
+            .mut_subcommand("task", |c| c.hide(true));
+    }
+    let cli = match Cli::from_arg_matches(&command.get_matches()) {
+        Ok(c) => c,
+        Err(e) => e.exit(),
+    };
     let dir = match cli.dir.clone() {
         Some(d) => d,
         None => match std::env::current_dir() {
@@ -137,6 +161,8 @@ fn run(ctx: &Ctx, cmd: Cmd) -> anyhow::Result<ExitCode> {
         Cmd::Session(c) => session::run(ctx, c),
         Cmd::Key(c) => session::key(ctx, c),
         Cmd::Scan { fix } => scan(ctx, fix),
+        Cmd::Board { cmd } => pm::board(ctx, cmd),
+        Cmd::Task(c) => pm::task(ctx, c),
         Cmd::Search { query, limit } => dec::search_all(ctx, &query.join(" "), limit),
         Cmd::Lint => dec::lint(ctx),
         Cmd::Status => status(ctx),

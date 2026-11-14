@@ -8,13 +8,10 @@ members = [
   "crates/index",
   "crates/sessions",
   "crates/store",
+  "crates/pm",
   "crates/app",
   "crates/mcp",
   "crates/cli",
-]
-# Crates under construction that are not yet part of the build.
-exclude = [
-  "crates/pm",
 ]
 
 [workspace.package]

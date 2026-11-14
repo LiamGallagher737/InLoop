@@ -4,6 +4,7 @@
 #![forbid(unsafe_code)]
 
 mod core_tools;
+mod pm_tools;
 
 use std::path::PathBuf;
 
@@ -14,6 +15,7 @@ use rmcp::{ServerHandler, ServiceExt, tool_handler};
 use serde::Serialize;
 
 pub use core_tools::*;
+pub use pm_tools::*;
 
 /// Instructions sent to the agent when it connects.
 pub const INSTRUCTIONS: &str = "InLoop records this project's decisions and its agent sessions. \
@@ -42,7 +44,16 @@ impl InLoopServer {
     /// A server for the project containing `dir`. The PM toolset is added
     /// only when the project turns the PM layer on.
     pub fn new(dir: PathBuf) -> Self {
-        let tool_router = Self::core_router();
+        let pm = Project::open(&dir).map(|p| p.pm_enabled()).unwrap_or(false);
+        Self::with_pm(dir, pm)
+    }
+
+    /// A server with or without the PM toolset, whatever the config says.
+    pub fn with_pm(dir: PathBuf, pm: bool) -> Self {
+        let mut tool_router = Self::core_router();
+        if pm {
+            tool_router += Self::pm_router();
+        }
         InLoopServer { dir, tool_router }
     }
 

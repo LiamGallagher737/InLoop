@@ -82,6 +82,9 @@ pub fn run(ctx: &Ctx, a: InitArgs) -> anyhow::Result<ExitCode> {
     if !a.no_hooks {
         crate::hooks::install(&repo, &mut r)?;
     }
+    if cfg.pm.enabled {
+        install_pm_files(&root, &cfg, &mut r)?;
+    }
 
     ctx.emit(&r, |s| {
         let mut out = String::new();
@@ -135,6 +138,40 @@ fn register_mcp(root: &Path, r: &mut InitReport) -> anyhow::Result<()> {
         r.updated.push(".mcp.json".into());
     } else {
         r.created.push(".mcp.json".into());
+    }
+    Ok(())
+}
+
+/// With the PM layer on: the shipped PM skill for Claude Code, and the
+/// brief template, both only if missing so local edits are kept.
+fn install_pm_files(
+    root: &Path,
+    cfg: &inloop_core::ProjectConfig,
+    r: &mut InitReport,
+) -> anyhow::Result<()> {
+    let skill = root
+        .join(".claude/skills")
+        .join(inloop_pm::SKILL_NAME)
+        .join("SKILL.md");
+    let template = root.join(&cfg.pm.brief_template);
+    for (path, text) in [
+        (skill, inloop_pm::PM_SKILL),
+        (template, inloop_pm::DEFAULT_BRIEF),
+    ] {
+        let name = path
+            .strip_prefix(root)
+            .unwrap_or(&path)
+            .display()
+            .to_string();
+        if path.exists() {
+            r.unchanged.push(name);
+            continue;
+        }
+        if let Some(d) = path.parent() {
+            std::fs::create_dir_all(d).with_context(|| format!("creating {}", d.display()))?;
+        }
+        std::fs::write(&path, text).with_context(|| format!("writing {name}"))?;
+        r.created.push(name);
     }
     Ok(())
 }

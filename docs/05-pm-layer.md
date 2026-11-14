@@ -37,13 +37,21 @@ InLoop doesn't start sessions or try to be the PM (D-E2GZ). The PM is an agent b
 
 The PM is the only writer of the board. Children report through `task_report` and `task_blocked`, and the PM folds those into the board (D-Y40K). This keeps one writer, which is what made the hand-kept board work.
 
+In practice (D-9QFB, proposed): task changes through MCP are accepted only from the main checkout; reports and blockers are records of their own that never change a task, and `board_fold` (or `inloop board fold`) applies them. `board_list` shows what is waiting to be folded and which blocked tasks are newly unblocked.
+
+The board lives in `$(git rev-parse --git-common-dir)/inloop/board/` as one JSON file per record (`tasks/`, `claims/`, `reports/`, `blockers/`), each written through the redactor.
+
 ## Statuses
 
-`ready`, `running`, `review`, `merged`, `blocked (external)`, `blocked (task)`, `blocked (human)`. The same set the hand-kept boards in Adpatch and Cirkit use.
+`ready`, `running`, `review`, `merged`, `blocked (external)`, `blocked (task)`, `blocked (human)`. The same set the hand-kept boards in Adpatch and Cirkit use. In JSON and on the command line they are `ready`, `running`, `review`, `merged`, `blocked-external`, `blocked-task`, `blocked-human`.
+
+Transitions and claims follow D-KX03 (proposed): `running` needs a branch and opens a claim; a claim by someone else is refused; `ready` and `merged` release claims; blocked statuses need a reason or a blocking task.
 
 ## The PM toolset
 
-The PM tools are a separate MCP toolset, registered only when the PM layer is enabled (docs/06). They never change how the core tools behave. A shipped PM skill (a general PM brief) explains the workflow; each project's specifics (conflict groups, checks, merge style, brief template) go in `inloop.toml` and a template file, so a project's own PM brief shrinks to configuration.
+The PM tools are a separate MCP toolset, registered only when the PM layer is enabled (docs/06). They never change how the core tools behave; the CLI's `board` and `task` commands are hidden from help when the layer is off and refuse to run. A shipped PM skill (a general PM brief) explains the workflow; `inloop init` writes it to `.claude/skills/inloop-pm/SKILL.md`, and the default brief template to `.inloop/brief.md`, when the layer is on. Each project's specifics (conflict groups, checks, merge style, brief template) go in `inloop.toml` and the template, so a project's own PM brief shrinks to configuration.
+
+The brief template understands `{{task.id}}`, `{{task.title}}`, `{{task.description}}`, `{{task.touches}}`, `{{task.branch}}`, `{{checks}}`, `{{decisions}}` (the decisions most relevant to the task, unmerged ones marked as not settled), `{{project}}` and `{{report_format}}`.
 
 ## Teams and sync (later)
 

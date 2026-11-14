@@ -14,6 +14,7 @@ inloop-core = { path = "../core" }
 inloop-decisions = { path = "../decisions" }
 inloop-index = { path = "../index" }
 inloop-app = { path = "../app" }
+inloop-pm = { path = "../pm" }
 rmcp = { version = "3.10", features = ["server", "transport-io", "macros", "schemars"] }
 serde.workspace = true
 serde_json.workspace = true

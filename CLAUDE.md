@@ -2,7 +2,7 @@
 
 A single Rust binary for AI-driven development with a human in the loop. Its core is two things any agent can use, in any workflow: recording a project's decisions and saving its agent sessions. Both are searchable by people (CLI) and agents (MCP), and secrets are redacted from everything InLoop stores. On top of that core sits an optional project manager layer (a work board, conflict checks, briefs and reports) for anyone who runs a PM agent with child sessions. Using InLoop without it is a first-class way to use InLoop (D-N6YH).
 
-**Current phase:** 0, design. No code exists yet. The docs below are the plan, written 2026-11-14 from a design discussion between Liam and Claude. Decisions from that discussion are already recorded in `docs/decisions/` by hand, in the format InLoop will use, so InLoop is developed with InLoop from day one (D-NPET). Phase 1 (decisions) is next. See `docs/08-roadmap.md`.
+**Current phase:** phases 1 to 4 are built (2026-11-15) and waiting on dogfooding: migrating Cirkit and Adpatch, installing the hooks, a real PM batch. See `docs/08-roadmap.md` for what's left. Record decisions with `inloop dec new` (or the `decision_new` MCP tool) now that it exists; InLoop is developed with InLoop (D-NPET).
 
 ## How to use these docs
 
@@ -37,24 +37,24 @@ A single Rust binary for AI-driven development with a human in the loop. Its cor
 
 ## Quick commands
 
-None yet: there is no code. Once phase 1 starts:
-
 ```sh
 cargo build --workspace
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all
+cargo run -q -- lint        # InLoop's own decisions
 ```
 
-## Repo layout (planned)
+## Repo layout
 
 ```
 CLAUDE.md          this file
 README.md          short public description
-inloop.toml        InLoop's own project config (draft until the CLI reads it)
+inloop.toml        InLoop's own project config
 docs/              all project documentation
   decisions/       one file per decision
-crates/            Rust workspace members (docs/01), not created yet
+crates/            Rust workspace members (docs/01)
+tools/             the one-off decisions migration script
 ```
 
 ## Project facts

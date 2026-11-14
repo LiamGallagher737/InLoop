@@ -22,9 +22,11 @@
 - Docs are the source of truth. If code and docs disagree, one of them is a bug; fix it in the same commit.
 - Public text and examples use neutral placeholders (example.com, USD, a generic company), never a real customer.
 
-## Recording decisions before the CLI exists
+## Recording decisions
 
-Until `inloop dec new` works, agents write decision files by hand in the exact format in `docs/02` (D-NPET).
+Use `inloop dec new` (or the `decision_new` MCP tool): it picks a free ID, checks every worktree and branch, and writes through the redactor. Find decisions with `inloop search` or `decision_search`.
+
+The manual steps below are the fallback when the binary isn't available. They predate the CLI and were how the first decisions were written (D-NPET).
 
 1. **Is it really a decision?** Only if a human on the project made it, or it's unmistakably clear from what they said. Quote them in `basis` and set `status: accepted`. If you chose it yourself, set `status: proposed`, `decided_by: agent`, and say in your final message that it needs the human's call.
 2. **Make an ID:**

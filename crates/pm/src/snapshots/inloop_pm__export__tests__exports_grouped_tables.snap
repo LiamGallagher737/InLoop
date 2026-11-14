@@ -1,0 +1,37 @@
+---
+source: src/export.rs
+expression: "export_markdown(\"Example board\", &tasks, &blockers)"
+---
+# Example board
+
+## Ready (1)
+
+| ID | Title | Branch | Owner | Touches | Updated |
+|---|---|---|---|---|---|
+| T-00A1 | Write the README |  |  |  | 2026-11-14 |
+
+## Running (1)
+
+| ID | Title | Branch | Owner | Touches | Updated |
+|---|---|---|---|---|---|
+| T-00B2 | Search \| ranking | task/search | sam | `crates/index/**` | 2026-11-14 |
+
+- T-00B2 reports it is blocked (B-0001, not folded in yet): the payment provider's sandbox
+
+## Blocked (task) (1)
+
+| ID | Title | Blocked on | Branch | Owner | Updated |
+|---|---|---|---|---|---|
+| T-00C3 | Billing page | T-00B2 |  |  | 2026-11-14 |
+
+## Blocked (human) (1)
+
+| ID | Title | Blocked on | Branch | Owner | Updated |
+|---|---|---|---|---|---|
+| T-00D4 | Pricing copy | Which currency to show first |  |  | 2026-11-14 |
+
+## Merged (1)
+
+| ID | Title | Branch | Owner | Touches | Updated |
+|---|---|---|---|---|---|
+| T-00Z9 | Old work |  |  |  | 2026-11-14 |

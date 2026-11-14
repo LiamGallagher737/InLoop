@@ -20,6 +20,7 @@ inloop-decisions = { path = "../decisions" }
 inloop-index = { path = "../index" }
 inloop-app = { path = "../app" }
 inloop-mcp = { path = "../mcp" }
+inloop-pm = { path = "../pm" }
 inloop-sessions = { path = "../sessions" }
 inloop-store = { path = "../store" }
 secrecy = "0.10"

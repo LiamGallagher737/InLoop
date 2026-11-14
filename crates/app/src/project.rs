@@ -138,9 +138,9 @@ impl Project {
     }
 
     /// The PM task that owns `branch`, when the PM layer is on. Filled in
-    /// by the PM layer; `None` otherwise.
-    pub fn task_for_branch(&self, _branch: Option<&str>) -> Option<String> {
-        None
+    /// from the board; `None` otherwise.
+    pub fn task_for_branch(&self, branch: Option<&str>) -> Option<String> {
+        self.task_for_branch_impl(branch)
     }
 
     pub fn context(&self) -> Result<Context, AppError> {

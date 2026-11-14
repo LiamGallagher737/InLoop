@@ -30,10 +30,11 @@ inloop mcp                        run the MCP server over stdio
 PM layer, only when enabled:
 
 ```
-inloop board [export]             show the board, or write it as Markdown
+inloop board [export|fold]        show the board, write it as Markdown, or fold in reports and blockers
 inloop task new|show|update       manage task records
 inloop task brief <id>            print the generated brief
-inloop task check                 conflict check across ready and running tasks
+inloop task check [ids]           conflict check: the given (or ready) tasks plus running ones
+inloop task report|blocked        what a task session reports (usually through MCP)
 ```
 
 `dec` is short for `decision`; both work.
@@ -79,9 +80,10 @@ Registered only when `[pm] enabled = true`.
 
 | Tool | Does |
 |---|---|
-| `board_list` | The board |
+| `board_list` | The board, plus reports and blockers not folded in yet and newly unblocked tasks |
 | `board_check` | Conflict check for a set of tasks |
-| `task_get` / `task_new` / `task_update` | Task records (PM only writes) |
+| `board_fold` | Fold reports and blockers into the board (PM only, D-9QFB) |
+| `task_get` / `task_new` / `task_update` | Task records (PM only writes, from the main checkout) |
 | `task_brief` | Generated brief for a task |
 | `task_report` | A child's structured end-of-work report |
 | `task_blocked` | A child reporting it is blocked, and on what |
