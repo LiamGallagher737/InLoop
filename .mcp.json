@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "inloop": {
+      "command": "inloop",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}
