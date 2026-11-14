@@ -36,6 +36,10 @@ pub struct DecisionsSection {
     pub dir: String,
     pub id_prefix: String,
     pub id_length: usize,
+    /// Globs of files whose decision references `inloop lint` checks.
+    pub lint_references: Vec<String>,
+    /// IDs used as examples in docs, which lint doesn't expect to exist.
+    pub example_ids: Vec<String>,
 }
 
 impl Default for DecisionsSection {
@@ -44,6 +48,8 @@ impl Default for DecisionsSection {
             dir: "docs/decisions".into(),
             id_prefix: "D".into(),
             id_length: 4,
+            lint_references: vec!["**/*.md".into()],
+            example_ids: Vec::new(),
         }
     }
 }

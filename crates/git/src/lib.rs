@@ -220,6 +220,32 @@ impl Repo {
         Ok(out)
     }
 
+    /// Local and remote-tracking branches whose tip is not reachable from
+    /// `main_ref`: the ones that may hold work not on main yet.
+    pub fn unmerged_branches(&self, main_ref: &str) -> Result<Vec<BranchRef>, GitError> {
+        let no_merged = format!("--no-merged={main_ref}");
+        let text = self.run(&[
+            "for-each-ref",
+            "--format=%(refname)%00%(refname:short)%00%(objectname)%00%(symref)",
+            &no_merged,
+            "refs/heads",
+            "refs/remotes",
+        ])?;
+        let mut out = Vec::new();
+        for line in text.lines() {
+            let parts: Vec<&str> = line.split('\0').collect();
+            if parts.len() < 4 || !parts[3].is_empty() || parts[0].ends_with("/HEAD") {
+                continue;
+            }
+            out.push(BranchRef {
+                refname: parts[0].to_string(),
+                short: parts[1].to_string(),
+                commit: parts[2].to_string(),
+            });
+        }
+        Ok(out)
+    }
+
     /// How many commits `head` is ahead of and behind `base`.
     pub fn ahead_behind(&self, base: &str, head: &str) -> Result<(u32, u32), GitError> {
         let spec = format!("{base}...{head}");

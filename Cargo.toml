@@ -3,6 +3,8 @@ resolver = "3"
 members = [
   "crates/core",
   "crates/git",
+  "crates/decisions",
+  "crates/index",
 ]
 # Crates under construction that are not yet part of the build.
 exclude = [
@@ -33,4 +35,6 @@ thiserror = "2"
 toml = "1"
 tempfile = "3"
 jiff = { version = "0.2", features = ["serde"] }
+globset = "0.4"
+rusqlite = { version = "0.42", features = ["bundled"] }
 insta = { version = "1", features = ["json", "yaml"] }
