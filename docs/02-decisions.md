@@ -108,7 +108,7 @@ Projects already using a single `decisions.md` with sequential numbers (Adpatch 
 3. Search and replace the old numbers across the repo's docs and code with the new IDs.
 4. Delete the old file.
 
-After that the project is fully on InLoop. The script lives outside the main binary and is not maintained after the migrations.
+After that the project is fully on InLoop. The script is [`tools/migrate_decisions.py`](../tools/migrate_decisions.py): it reads entries shaped `## D-nnn (YYYY-MM-DD) Title`, turns whole-line `Superseded by D-nnn.` markers into links, writes a `MIGRATION-MAP.txt`, then runs `inloop scan --fix` and `inloop lint`. Run it with `--dry-run` first. Entries default to `accepted` with a basis pointing at the original entry; `--status proposed` is there for logs that mix in choices no human made. It lives outside the main binary and is not maintained after the migrations.
 
 ## Scale
 
