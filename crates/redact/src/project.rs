@@ -218,10 +218,9 @@ fn phone_ok(text: &str, start: usize, end: usize) -> bool {
     }
     // Dates: 2026-11-14, 2026.11.14 and times.
     let parts: Vec<&str> = m.split([' ', '-', '.']).collect();
-    if parts.len() == 3 && parts[0].len() == 4 && parts[1].len() <= 2 && parts[2].len() <= 2 {
-        return false;
-    }
-    true
+    let looks_like_date =
+        parts.len() == 3 && parts[0].len() == 4 && parts[1].len() <= 2 && parts[2].len() <= 2;
+    !looks_like_date
 }
 
 fn card_ok(text: &str, start: usize, end: usize) -> bool {
