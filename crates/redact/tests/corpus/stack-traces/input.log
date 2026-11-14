@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "/app/worker/tasks.py", line 88, in sync_orders
+    conn = psycopg2.connect(dsn)
+psycopg2.OperationalError: connection to server at "db.internal.example.com" (10.0.3.14), port 5432 failed: FATAL:  password authentication failed for user "app"
+DSN was postgresql://app:Fake-Trace-Pass-7788@db.internal.example.com:5432/orders
+
+Error: Request failed with status code 401
+    at createError (/app/node_modules/axios/lib/core/createError.js:16:15)
+    at settle (/app/node_modules/axios/lib/core/settle.js:17:12)
+  config: {
+    headers: {
+      Accept: 'application/json',
+      Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlLXVzZXItMDAwMCIsIm5hbWUiOiJFeGFtcGxlIFRlc3QiLCJpYXQiOjE3MDAwMDAwMDB9.EXAMPLEfakeSignature0_-9EXAMPLEfakeSignatur',
+      'User-Agent': 'axios/1.7.7'
+    },
+    url: 'https://api.example.com/v2/orders?since=2026-11-01',
+  }
+2026-11-14T02:13:45.512Z ERROR [req-7f3a2c] upstream returned 403 for key sk_live_EXAMPLE0fake1Stripe2Key3EXAMPLE0fa (live mode)
+2026-11-14T02:13:46.004Z WARN  retrying in 250ms (attempt 2/5) trace_id=4bf92f3577b34da6a3ce929d0e0e4736
+java.lang.IllegalStateException: Invalid client secret for client_id=example-web
+	at com.example.auth.OAuthClient.exchange(OAuthClient.java:142)
+	at com.example.auth.OAuthClient.lambda$refresh$0(OAuthClient.java:97)
+Caused by: com.example.http.HttpException: 400 Bad Request {"error":"invalid_grant","refresh_token":"1//0gEXAMPLEfakeRefreshToken-0000aaaaBBBB"}
+thread 'main' panicked at crates/core/src/store.rs:212:9:
+called `Result::unwrap()` on an `Err` value: Os { code: 13, kind: PermissionDenied, message: "Permission denied" }

@@ -1,0 +1,337 @@
+---
+source: crates/mcp/tests/tools.rs
+expression: tools
+---
+[
+  {
+    "description": "Where you are: the project, repo, worktree, branch, the main branch, and how far ahead of or behind main you are.",
+    "input_schema": {
+      "properties": {},
+      "type": "object"
+    },
+    "name": "context"
+  },
+  {
+    "description": "Accept a proposed decision because a human said so. `basis` must quote the human's words; never accept a decision on your own judgement.",
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "basis": {
+          "description": "The human's words accepting it, quoted.",
+          "type": "string"
+        },
+        "decided_by": {
+          "description": "The human who accepted it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "The proposed decision to accept.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "basis"
+      ],
+      "type": "object"
+    },
+    "name": "decision_accept"
+  },
+  {
+    "description": "Get one decision in full by ID (old aliases such as D-264 also work), with its provenance.",
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "id": {
+          "description": "A decision ID such as D-7KQ2, or an old alias such as D-264.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "name": "decision_get"
+  },
+  {
+    "description": "List decisions, newest first, with optional filters. Includes decisions on other branches and worktrees, marked unmerged.",
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "since": {
+          "description": "Only decisions dated on or after this day (YYYY-MM-DD).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "description": "Only this status: proposed, accepted, rejected or superseded.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tag": {
+          "description": "Only decisions with this tag.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unmerged_only": {
+          "description": "Only decisions not merged into the main branch yet.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "name": "decision_list"
+  },
+  {
+    "description": "Record a decision as a new file in this worktree. The rule: a decision is something a human decided. Record it as `accepted` only when a human on the project made it, or it is unmistakably clear from what they said, and quote them in `basis`. A choice you made yourself, however sensible, is `proposed` (the default); say in your reply that it needs the human's call. Everything written is redacted first.",
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "basis": {
+          "description": "Required for accepted: the human's words, quoted, or a pointer to where they said it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "consequences": {
+          "description": "What follows from it, including what it rules out.",
+          "type": "string"
+        },
+        "context": {
+          "description": "Why this came up.",
+          "type": "string"
+        },
+        "decided_by": {
+          "description": "The human who made it, for accepted decisions.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "decision": {
+          "description": "What was decided, in a few sentences.",
+          "type": "string"
+        },
+        "status": {
+          "description": "\"accepted\" only when a human made the decision and `basis` quotes them. Otherwise\nleave it out (or \"proposed\").",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "supersedes": {
+          "description": "IDs of decisions this one replaces. They must be in this worktree.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "tags": {
+          "description": "Free-form tags for search.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "title": {
+          "description": "One line, stated as the decision itself, e.g. \"Snap writes go through one helper\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "context",
+        "decision",
+        "consequences"
+      ],
+      "type": "object"
+    },
+    "name": "decision_new"
+  },
+  {
+    "description": "Reject a proposed decision because a human said so.",
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "id": {
+          "description": "The proposed decision to reject.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "The human's reason, quoted, if they gave one.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "name": "decision_reject"
+  },
+  {
+    "description": "Search this project's decisions: on the main branch, in every worktree and on every unmerged branch. Use it before making a choice a past decision may cover. Results carry provenance: `unmerged` means work in progress elsewhere, not settled fact.",
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "limit": {
+          "description": "Maximum results (default 10).",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "query": {
+          "description": "Words to search for. Every word must match, as a prefix; if nothing\nmatches, any word may.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "type": "object"
+    },
+    "name": "decision_search"
+  },
+  {
+    "description": "Record that one decision replaces another. Both files must be in this worktree; both are updated together.",
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "new": {
+          "description": "The decision that replaces it.",
+          "type": "string"
+        },
+        "old": {
+          "description": "The decision being replaced.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "old",
+        "new"
+      ],
+      "type": "object"
+    },
+    "name": "decision_supersede"
+  },
+  {
+    "description": "Search decisions and session summaries together. Results carry provenance: `unmerged` means work in progress elsewhere, not settled fact.",
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "limit": {
+          "description": "Maximum results (default 10).",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "query": {
+          "description": "Words to search for. Every word must match, as a prefix; if nothing\nmatches, any word may.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "type": "object"
+    },
+    "name": "search"
+  },
+  {
+    "description": "Get a captured session's summary, commits and decisions, with provenance. Set `transcript` for the full redacted transcript (paged with offset and max_chars) only when the summary isn't enough.",
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "id": {
+          "description": "Session ID, or a unique prefix of it.",
+          "type": "string"
+        },
+        "max_chars": {
+          "description": "With `transcript`, return at most this many characters (default 40000).",
+          "format": "uint",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "offset": {
+          "description": "With `transcript`, skip this many characters of it (for paging).",
+          "format": "uint",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "transcript": {
+          "description": "Include the full redacted transcript. Large: ask only when the summary isn't enough.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "name": "session_get"
+  },
+  {
+    "description": "Search summaries of past agent sessions in this project: what was asked, what was done, files touched, decisions made. Use it to find out why something was done.",
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "limit": {
+          "description": "Maximum results (default 10).",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "query": {
+          "description": "Words to search for. Every word must match, as a prefix; if nothing\nmatches, any word may.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "type": "object"
+    },
+    "name": "session_search"
+  }
+]

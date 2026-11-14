@@ -1,0 +1,31 @@
+description = "Terminal session: exports, CLI flags, tool output with tokens, and plenty of hashes and versions"
+input = "input.txt"
+secrets = [
+    "sk-proj-EXAMPLEfake0openai1KEY2EXAMPLEfake0openai1KEY2EXAMPLEfake0openai1KEY2EXAMPT3BlbkFJFake9Example8Key7Fake9Example8Key7Fake9Example8Key7Fake9Example8Key7Fake9E",
+    "rk_live_FAKErestricted0EXAMPLE9FAKErestric",
+    "whsec_EXAMPLEfakeWebhook0Secret1EXAMPL",
+    "xoxb-1234567890-1234567890123-EXAMPLEfakeSlack0BotEXAM",
+    "npm_EXAMPLEfakeNpm0Token9EXAMPLEfakeNpm0",
+    "Fake.Mysql.Pass.2026",
+]
+survive = [
+    "4f2a9c1 fix(config)",
+    "b7e1d03",
+    "9c0e2d4",
+    "1a2b3c4",
+    "e69de29",
+    "D-7KQ2",
+    "T-4M1P",
+    "serde v1.0.228",
+    "regex-automata v0.4.13",
+    "from 1.12.3 to 1.13.1",
+    "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+    "Bearer $OPENAI_API_KEY",
+    "sha256:3f8b2c1d9e7a6f5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b",
+    "Token: gho_************************************",
+    "localhost:3000/api/webhooks",
+    "@example/widgets@2.4.1",
+    "2026-11-14T02:20:11Z",
+    "in 41.07s",
+    "\u2b22 example-app... done, v42",
+]

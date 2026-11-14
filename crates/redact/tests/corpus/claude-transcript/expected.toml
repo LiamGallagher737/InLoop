@@ -1,0 +1,31 @@
+description = "Claude Code JSONL session: secrets in a user message, a tool_use command, tool results and an Edit"
+input = "input.jsonl"
+secrets = [
+    "ghp_EXAMPLEfakeTOKEN0123abcdEXAMPLEfakeT",
+    "sk-ant-api03-EXAMPLE-fake_Key0123456789abcdefXYZEXAMPLE-fake_Key0123456789abcdefXYZEXAMPLE-fake_Key0123456AA",
+    "AKIAFAKEEXAMPLE23456",
+    "FAKEsecretKEY0example0EXAMPLE0abcd/EFGH+",
+    "sk_live_EXAMPLE0fake1Stripe2Key3EXAMPLE0fa",
+    "ya29.a0EXAMPLE_fake-Google0Token1EXAMPLE_fake-Google0Token1EXAMPLE_fake-Google0Token1EXAMPLE_fake-Google0Token1EXAMPLE_fake-Goo",
+]
+survive = [
+    "5f0c2a8e-3b1d-4e6f-9a7c-2d4b8e1f0a63",
+    "8d3f6b2a-1c4e-4a9b-b7d2-6e0f3a5c8b19",
+    "msg_01XyZEXAMPLEfakeMsgId0001",
+    "toolu_01AbCdEXAMPLEfakeToolUse01",
+    "req_011CVEXAMPLEfakeRequestId01",
+    "EqQBCkgIBxABGAIqQKexampleThinkingSignature0BlobZm9vYmFyYmF6cXV4AAAAexampleQ1234+/w8RBxIMfakeSigEXAMPLE==",
+    "D-7KQ2",
+    "D-N6YH",
+    "4f2a9c1",
+    "\"input_tokens\":4213",
+    "\"cache_read_input_tokens\":18234",
+    "\"preTokens\":167404",
+    "anthropic-version: 2023-06-01",
+    "AWS_REGION=ap-southeast-2",
+    "process.env.STRIPE_SECRET_KEY!",
+    "token_type",
+    "2026-11-14T02:13:45.512Z",
+    "/Users/dev/projects/example-app/src/billing.ts",
+    "s3://example-app-assets",
+]

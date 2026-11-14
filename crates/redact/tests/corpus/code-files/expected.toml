@@ -1,0 +1,27 @@
+description = "Source files with hard-coded keys next to code that only names secrets"
+input = "input.txt"
+secrets = [
+    "sk_live_EXAMPLE0fake1Stripe2Key3EXAMPLE0fa",
+    "AIzaSyEXAMPLEfake0Google-Key_9EXAMPLEfa",
+    "q8Zt2EXAMPLEfake7vNw4xLp9Rk3",
+    "cs_EXAMPLE_0f4k3c1i3ntS3cr3tV4lu3_9q8w",
+    "xoxp-1234567890-1234567890-1234567890123-EXAMPLEfakeUser0Token9EXAMPLEfak",
+    "SG.EXAMPLEfake0SendGrid9E.FAKEexampleSecret0Value9FAKEexampleSecret0V",
+]
+survive = [
+    "apiVersion: \"2024-06-20\"",
+    "process.env.SUPABASE_ANON_KEY!",
+    "password: process.env.DB_PASSWORD,",
+    "tokenExpirySeconds: 3600",
+    "maxTokens: 4096",
+    "getAccessToken(refreshToken: string)",
+    "`Bearer ${refreshToken}`",
+    ".access_token;",
+    "verify_token(token: &str, key: &DecodingKey)",
+    "std::env::var(\"ANTHROPIC_API_KEY\")",
+    "hash_password(&password)",
+    "Algorithm::HS256",
+    "password=os.environ[\"PGPASSWORD\"]",
+    "~/.ssh/id_ed25519",
+    "     5\u2192",
+]

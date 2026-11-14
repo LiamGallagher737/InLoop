@@ -1,0 +1,26 @@
+[package]
+name = "inloop-store"
+description = "Encrypted, pluggable session store for InLoop: local directory or S3-compatible bucket, age encryption, zstd compression"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "inloop_store"
+
+[lints]
+workspace = true
+
+[dependencies]
+age = "0.12.1"
+object_store = { version = "0.14.2", default-features = false, features = ["aws"] }
+zstd = "0.14.4"
+sha2 = "0.11.1"
+hex = "0.4.3"
+secrecy = "0.10.3"
+tokio = { version = "1.54.1", features = ["rt", "net", "time"] }
+futures = "0.3.34"
+thiserror = "2.0.21"
+tempfile = "3.27.0"
+

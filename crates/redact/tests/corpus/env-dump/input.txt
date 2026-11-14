@@ -1,0 +1,5 @@
+HOME=/Users/dev
+SHELL=/bin/zsh
+ANTHROPIC_API_KEY=sk-ant-api03-EXAMPLE-fake_Key0123456789abcdefXYZEXAMPLE-fake_Key0123456789abcdefXYZEXAMPLE-fake_Key0123456AA
+DEPLOY_PASSPHRASE=a wholly unpatterned phrase here
+PATH=/opt/homebrew/bin:/usr/bin:/bin

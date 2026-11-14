@@ -1,0 +1,23 @@
+description = "Python, Node, Java and Rust errors leaking connection strings and tokens"
+input = "input.log"
+secrets = [
+    "Fake-Trace-Pass-7788",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlLXVzZXItMDAwMCIsIm5hbWUiOiJFeGFtcGxlIFRlc3QiLCJpYXQiOjE3MDAwMDAwMDB9.EXAMPLEfakeSignature0_-9EXAMPLEfakeSignatur",
+    "sk_live_EXAMPLE0fake1Stripe2Key3EXAMPLE0fa",
+    "1//0gEXAMPLEfakeRefreshToken-0000aaaaBBBB",
+]
+survive = [
+    "line 88, in sync_orders",
+    "(10.0.3.14), port 5432",
+    "createError.js:16:15",
+    "settle.js:17:12",
+    "'User-Agent': 'axios/1.7.7'",
+    "since=2026-11-01",
+    "[req-7f3a2c]",
+    "trace_id=4bf92f3577b34da6a3ce929d0e0e4736",
+    "client_id=example-web",
+    "OAuthClient.java:142",
+    "lambda$refresh$0",
+    "store.rs:212:9",
+    "code: 13, kind: PermissionDenied",
+]

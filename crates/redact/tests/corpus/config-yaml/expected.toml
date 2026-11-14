@@ -1,0 +1,20 @@
+description = "GitHub Actions, a Kubernetes Secret and docker-compose"
+input = "input.yaml"
+secrets = [
+    "RmFrZS1LOHMtRGItUGFzcy0wMDAwLUVYQU1QTEU=",
+    "ZXhhbXBsZS1mYWtlLWFwaS10b2tlbi0wMDAwMDA=",
+    "Fake-Compose-Pass-9911",
+    "key-0123456789abcdefEXAMPLE0fake99",
+    "github_pat_11EXAMPLE0fake_TOKEN9876zyxwEXAMPLE0fake_TOKEN9876zyxwEXAMPLE0fake_TOKEN9876zyxwEX",
+]
+survive = [
+    "${{ secrets.NPM_TOKEN }}",
+    "actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0",
+    "runs-on: ubuntu-24.04",
+    "API_BASE_URL: https://api.example.com",
+    "name: app-secrets",
+    "postgres:16.4-alpine",
+    "POSTGRES_USER: app",
+    "ghcr.io/example/api:1.4.2",
+    "@db:5432/app",
+]

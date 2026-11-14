@@ -1,0 +1,33 @@
+description = "Opt-in personal-data rules and a project pattern; dates, versions, IPs and IDs survive"
+input = "input.txt"
+personal_data = true
+patterns = [{ kind = "customer-account", regex = '\bACME-[0-9]{6}\b' }]
+secrets = [
+    "jane.example@example.com",
+    "+64 21 555 0199",
+    "(09) 555 0123",
+    "(415) 555-0132",
+    "415-555-0199",
+    "020 7946 0000",
+    "07700 900123",
+    "0412 555 019",
+    "4111 1111 1111 1111",
+    "5555-5555-5555-4444",
+    "4242424242424242",
+    "ACME-104233",
+]
+survive = [
+    "#1042",
+    "2026-11-14 10:21",
+    "v3.12.1",
+    "build 20261114.1203",
+    "noreply@example.com",
+    "192.168.1.20",
+    "1500 ms",
+    "charge.rs:212:9",
+    "4f2a9c1",
+    "git@github.com:example/app.git",
+    "NZD 1,234.56",
+    "INV-2026-000417",
+    "123e4567-e89b-12d3-a456-426614174000",
+]

@@ -9,6 +9,8 @@ main_branch = "main"
 dir = "docs/decisions"   # D-SJBG
 id_prefix = "D"
 id_length = 4            # Crockford base32 characters after the prefix (D-11JK)
+# IDs used as examples in the docs, which lint shouldn't expect to exist.
+example_ids = ["D-7KQ2", "D-XXXX", "D-1234"]
 
 [checks]
 # Commands an agent runs before saying work is done.

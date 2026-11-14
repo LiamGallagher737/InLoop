@@ -1,0 +1,31 @@
+[package]
+name = "inloop-redact"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The InLoop redactor: every byte InLoop stores passes through it first."
+
+[lib]
+name = "inloop_redact"
+path = "src/lib.rs"
+
+[dependencies]
+aho-corasick = "1.1"
+base64 = "0.23"
+globset = "0.4"
+regex = "1.13"
+secrecy = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+toml = "1"
+
+[dev-dependencies]
+tempfile = "3"
+base64 = "0.23"
+toml = "1"
+serde = { version = "1", features = ["derive"] }
+
+[lints]
+workspace = true

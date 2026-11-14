@@ -1,0 +1,21 @@
+description = "git log and diff output: hashes and authors survive, a leaked key in a message and a diff do not"
+input = "input.txt"
+secrets = [
+    "sk-ant-admin01-FAKEadminEXAMPLE_0000-zzzz9FAKEadminEXAMPLE_0000-zzzz9FAKEadminEXAMPLE_0000-zzzz9FAKEadminEXAAA",
+    "AKIAIOSFODNN7EXAMPLE",
+    "FAKEsecretKEY0example0EXAMPLE0abcd/EFGH+",
+    "glpat-EXAMPLEfake0GlEXAMPL",
+]
+survive = [
+    "commit 4f2a9c1e8b7d6a5f4e3c2b1a0f9e8d7c6b5a4f3e",
+    "commit b7e1d03c4a5f6e7d8c9b0a1f2e3d4c5b6a7f8e9d",
+    "Jane Example <jane@example.com>",
+    "Merge: 1a2b3c4 5d6e7f8",
+    "Fri Nov 14 10:21:07 2026 +1300",
+    "Refs: D-7KQ2",
+    "<noreply@anthropic.com>",
+    "#142",
+    "index 0000000..e69de29",
+    "@@ -0,0 +1,4 @@",
+    "+SENTRY_ENVIRONMENT=production",
+]

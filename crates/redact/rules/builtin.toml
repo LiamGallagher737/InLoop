@@ -1,0 +1,102 @@
+# InLoop's built-in provider rules, in the gitleaks rule format.
+#
+# These guarantee the formats docs/04-redaction.md names even where the
+# vendored gitleaks rules are stricter (exact lengths, a required trailing
+# delimiter, allowlists for documentation examples) or have no rule at all.
+# They run without entropy checks or allowlists: for these prefixes a match is
+# a credential, or a placeholder that costs nothing to redact.
+#
+# Where a gitleaks rule matches exactly the same text, its id wins.
+
+[[rules]]
+id = "anthropic-api-key"
+regex = '''\bsk-ant-(?:api|admin|oat|ort|sid)[0-9]{2}-[A-Za-z0-9_-]{20,}'''
+keywords = ["sk-ant-"]
+
+[[rules]]
+id = "github-pat"
+regex = '''\bghp_[A-Za-z0-9]{30,}'''
+keywords = ["ghp_"]
+
+[[rules]]
+id = "github-token"
+regex = '''\bgh[ousr]_[A-Za-z0-9]{30,}'''
+keywords = ["gho_", "ghu_", "ghs_", "ghr_"]
+
+[[rules]]
+id = "github-fine-grained-pat"
+regex = '''\bgithub_pat_[A-Za-z0-9_]{30,}'''
+keywords = ["github_pat_"]
+
+[[rules]]
+id = "aws-access-token"
+regex = '''\b(?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16}\b'''
+keywords = ["a3t", "akia", "asia", "abia", "acca"]
+
+[[rules]]
+id = "stripe-access-token"
+regex = '''\b(?:sk|rk)_(?:live|test|prod)_[A-Za-z0-9]{10,}'''
+keywords = ["sk_live_", "sk_test_", "sk_prod_", "rk_live_", "rk_test_", "rk_prod_"]
+
+[[rules]]
+id = "stripe-webhook-secret"
+regex = '''\bwhsec_[A-Za-z0-9]{24,}'''
+keywords = ["whsec_"]
+
+[[rules]]
+id = "meta-access-token"
+regex = '''\bEAA[A-Za-z0-9]{30,}'''
+keywords = ["eaa"]
+
+[[rules]]
+id = "google-oauth-token"
+regex = '''\bya29\.[A-Za-z0-9_-]{20,}'''
+keywords = ["ya29."]
+
+[[rules]]
+id = "google-refresh-token"
+regex = '''\b1//0[A-Za-z0-9_-]{30,}'''
+keywords = ["1//0"]
+
+[[rules]]
+id = "gcp-api-key"
+regex = '''\bAIza[A-Za-z0-9_-]{35}'''
+keywords = ["aiza"]
+
+[[rules]]
+id = "slack-token"
+regex = '''\bxox[abposer]-[A-Za-z0-9-]{10,}'''
+keywords = ["xox"]
+
+[[rules]]
+id = "slack-app-token"
+regex = '''\bxapp-[0-9]-[A-Za-z0-9-]{10,}'''
+keywords = ["xapp-"]
+
+[[rules]]
+id = "openai-api-key"
+regex = '''\bsk-(?:proj|svcacct|admin)-[A-Za-z0-9_-]{20,}'''
+keywords = ["sk-proj-", "sk-svcacct-", "sk-admin-"]
+
+[[rules]]
+id = "npm-access-token"
+regex = '''\bnpm_[A-Za-z0-9]{36}\b'''
+keywords = ["npm_"]
+
+[[rules]]
+id = "gitlab-pat"
+regex = '''\bglpat-[A-Za-z0-9_-]{20,}'''
+keywords = ["glpat-"]
+
+# A PEM private key block: the whole block through its END line, including
+# blocks shown with escaped newlines (inside JSON) or indented (inside YAML),
+# and blocks cut off before their END line.
+[[rules]]
+id = "private-key"
+regex = '''-----BEGIN[ A-Z0-9_-]{0,100}PRIVATE KEY(?: BLOCK)?-----(?:[A-Za-z][A-Za-z-]*: [^\r\n\\]*(?:\r?\n|\\+[rn])+)*(?:[A-Za-z0-9+/=]|\r?\n[ \t]*|\\+[rn][ \t]*)*(?:-----END[ A-Z0-9_-]{0,100}PRIVATE KEY(?: BLOCK)?-----)?'''
+keywords = ["-----begin"]
+
+[[rules]]
+id = "jwt"
+regex = '''\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]*'''
+keywords = ["eyj"]

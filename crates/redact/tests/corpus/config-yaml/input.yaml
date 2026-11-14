@@ -1,0 +1,41 @@
+# .github/workflows/deploy.yml
+name: deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+      - run: npm ci
+      - env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          API_BASE_URL: https://api.example.com
+        run: npm publish
+---
+# k8s/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: production
+type: Opaque
+data:
+  db-password: RmFrZS1LOHMtRGItUGFzcy0wMDAwLUVYQU1QTEU=
+  api-token: ZXhhbXBsZS1mYWtlLWFwaS10b2tlbi0wMDAwMDA=
+---
+# docker-compose.yml
+services:
+  db:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_PASSWORD: Fake-Compose-Pass-9911
+      POSTGRES_USER: app
+  api:
+    image: ghcr.io/example/api:1.4.2
+    environment:
+      - DATABASE_URL=postgresql://app:Fake-Compose-Pass-9911@db:5432/app
+      - MAILGUN_API_KEY=key-0123456789abcdefEXAMPLE0fake99
+      - GITHUB_TOKEN=github_pat_11EXAMPLE0fake_TOKEN9876zyxwEXAMPLE0fake_TOKEN9876zyxwEXAMPLE0fake_TOKEN9876zyxwEX

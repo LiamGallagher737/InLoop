@@ -1,0 +1,11 @@
+Support ticket #1042, opened 2026-11-14 10:21 by Jane Example <jane.example@example.com>
+Phone: +64 21 555 0199 (mobile), office (09) 555 0123
+US contact: (415) 555-0132 or 415-555-0199
+UK office: 020 7946 0000, mobile 07700 900123
+AU: 0412 555 019
+Card on file: 4111 1111 1111 1111, backup 5555-5555-5555-4444, test 4242424242424242
+Customer account ACME-104233 is on plan v3.12.1, build 20261114.1203
+Auto-reply sent from noreply@example.com
+Server 192.168.1.20 answered in 1500 ms, see src/billing/charge.rs:212:9
+Commit 4f2a9c1 pushed to git@github.com:example/app.git
+Order total NZD 1,234.56, invoice INV-2026-000417, uuid 123e4567-e89b-12d3-a456-426614174000

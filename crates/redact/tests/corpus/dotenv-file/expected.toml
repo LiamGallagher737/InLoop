@@ -1,0 +1,21 @@
+description = ".env contents as they appear in a transcript (not loaded as known values here)"
+input = "input.env"
+secrets = [
+    "Fake-Db-Pass-0000",
+    "4f8EXAMPLEfakeJwtSecret0q9w8e7r6t5y",
+    "sk-ant-api03-EXAMPLE-fake_Key0123456789abcdefXYZEXAMPLE-fake_Key0123456789abcdefXYZEXAMPLE-fake_Key0123456AA",
+    "sk_live_EXAMPLE0fake1Stripe2Key3EXAMPLE0fa",
+    "FAKEsecretKEY0example0EXAMPLE0abcd/EFGH+",
+    "Fake!Smtp#Pass-2026",
+]
+survive = [
+    "NODE_ENV=production",
+    "PORT=3000",
+    "LOG_LEVEL=debug",
+    "app_user:",
+    "@db.internal.example.com:5432/app",
+    "REDIS_URL=redis://localhost:6379/0",
+    "NEXT_PUBLIC_APP_URL=https://app.example.com",
+    "FEATURE_FLAGS=search,billing,teams",
+    "CACHE_TTL_SECONDS=86400",
+]

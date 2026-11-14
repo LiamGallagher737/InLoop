@@ -1,0 +1,17 @@
+description = "JSON config with keys, and lockfile integrity hashes that must survive"
+input = "input.txt"
+secrets = [
+    "SG.EXAMPLEfake0SendGrid9E.FAKEexampleSecret0Value9FAKEexampleSecret0V",
+    "Zm9vYmFyEXAMPLE0fake9q8w7e6r5t4y",
+    "https://hooks.slack.com/services/T0EXAMPLE/B0FAKE0000/EXAMPLEfakeHook01EXAMPLE",
+]
+survive = [
+    "\"requestTimeoutMs\": 15000",
+    "sha512-yXLRqatcCuKtVHsWrNg0JL3l1zGfdXeEvDa0bdu4tCDQw0RpMDZsqbkyRTUnKMR0tXF627V2oEWjBEaEdqTwtQ==",
+    "sha512-Xxr6BBRCAOQixvonOye19wnzyDiUtTeqldOOmj3CkeblonbccA12PFwlufvRdrpjXxqnmUaeiU5EOA+7s5diUQ==",
+    "checksum = \"ddd31a130427c27518df266943a5308ed92d4b226cc639f5a8f1002816174301\"",
+    "h1:ihbySMvVjLAeSH1IbfcRTkD/iNscyz8rGzjF/E5hV6U=",
+    "h1:kDsLvtWBEx7MV9tJOj9bnXsPbxwJQ6csT/x4KIYw3ns=",
+    "regex-parser-2.3.1.tgz",
+    "\"retries\": 3",
+]

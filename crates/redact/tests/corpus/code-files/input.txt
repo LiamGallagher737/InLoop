@@ -1,0 +1,35 @@
+     1→import Stripe from "stripe";
+     2→import { createClient } from "@supabase/supabase-js";
+     3→
+     4→// TODO: move to env before shipping
+     5→const stripe = new Stripe("sk_live_EXAMPLE0fake1Stripe2Key3EXAMPLE0fa", { apiVersion: "2024-06-20" });
+     6→const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+     7→
+     8→export const config = {
+     9→  password: process.env.DB_PASSWORD,
+    10→  apiKey: "AIzaSyEXAMPLEfake0Google-Key_9EXAMPLEfa",
+    11→  sessionSecret: "q8Zt2EXAMPLEfake7vNw4xLp9Rk3",
+    12→  tokenExpirySeconds: 3600,
+    13→  maxTokens: 4096,
+    14→};
+    15→
+    16→export async function getAccessToken(refreshToken: string): Promise<string> {
+    17→  const res = await fetch(TOKEN_URL, { headers: { Authorization: `Bearer ${refreshToken}` } });
+    18→  return (await res.json()).access_token;
+    19→}
+
+--- src/auth.rs ---
+const CLIENT_SECRET: &str = "cs_EXAMPLE_0f4k3c1i3ntS3cr3tV4lu3_9q8w";
+
+pub fn verify_token(token: &str, key: &DecodingKey) -> Result<Claims, AuthError> {
+    let api_key = std::env::var("ANTHROPIC_API_KEY")?;
+    let password_hash = hash_password(&password)?;
+    decode::<Claims>(token, key, &Validation::new(Algorithm::HS256))
+}
+
+--- scripts/notify.py ---
+import os, psycopg2
+SLACK_TOKEN = "xoxp-1234567890-1234567890-1234567890123-EXAMPLEfakeUser0Token9EXAMPLEfak"
+SENDGRID_API_KEY = "SG.EXAMPLEfake0SendGrid9E.FAKEexampleSecret0Value9FAKEexampleSecret0V"
+db = psycopg2.connect(host="db.internal", password=os.environ["PGPASSWORD"])
+private_key = open(os.path.expanduser("~/.ssh/id_ed25519")).read()

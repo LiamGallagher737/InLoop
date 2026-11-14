@@ -1,0 +1,35 @@
+$ git log --oneline -5
+4f2a9c1 fix(config): handle empty known_value_files
+b7e1d03 feat(api): add retry with exponential backoff
+9c0e2d4 chore(deps): bump regex from 1.12.3 to 1.13.1
+1a2b3c4 docs: record D-7KQ2 and T-4M1P
+e69de29 initial commit
+$ cargo build --release
+   Compiling serde v1.0.228
+   Compiling regex-automata v0.4.13
+   Compiling inloop-core v0.1.0 (/Users/dev/projects/inloop/crates/core)
+    Finished `release` profile [optimized] target(s) in 41.07s
+$ sha256sum dist/app.tar.gz
+9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08  dist/app.tar.gz
+$ export OPENAI_API_KEY=sk-proj-EXAMPLEfake0openai1KEY2EXAMPLEfake0openai1KEY2EXAMPLEfake0openai1KEY2EXAMPT3BlbkFJFake9Example8Key7Fake9Example8Key7Fake9Example8Key7Fake9Example8Key7Fake9E
+$ curl https://api.openai.com/v1/models -H "Authorization: Bearer $OPENAI_API_KEY"
+{"object": "list", "data": []}
+$ npm install
+added 214 packages, and audited 215 packages in 3s
+found 0 vulnerabilities
+$ docker pull ghcr.io/example/app@sha256:3f8b2c1d9e7a6f5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b
+$ gh auth status
+github.com
+  ✓ Logged in to github.com account example-dev (keyring)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: gho_************************************
+$ stripe listen --api-key rk_live_FAKErestricted0EXAMPLE9FAKErestric --forward-to localhost:3000/api/webhooks
+> Ready! Your webhook signing secret is whsec_EXAMPLEfakeWebhook0Secret1EXAMPL (^C to quit)
+$ heroku config:set SLACK_BOT_TOKEN=xoxb-1234567890-1234567890123-EXAMPLEfakeSlack0BotEXAM -a example-app
+Setting SLACK_BOT_TOKEN and restarting ⬢ example-app... done, v42
+$ npm publish --//registry.npmjs.org/:_authToken=npm_EXAMPLEfakeNpm0Token9EXAMPLEfakeNpm0
++ @example/widgets@2.4.1
+$ mysql -h db.example.com -u admin --password=Fake.Mysql.Pass.2026 app
+$ echo "deploy done at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+deploy done at 2026-11-14T02:20:11Z

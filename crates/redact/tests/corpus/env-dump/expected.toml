@@ -1,0 +1,11 @@
+description = "Layer 4: output of a command that dumps the environment is dropped whole"
+input = "input.txt"
+command = "sudo -E env | sort"
+dropped = true
+secrets = [
+    "sk-ant-api03-EXAMPLE-fake_Key0123456789abcdefXYZEXAMPLE-fake_Key0123456789abcdefXYZEXAMPLE-fake_Key0123456AA",
+    "a wholly unpatterned phrase here",
+    "/opt/homebrew/bin",
+]
+survive = [
+]

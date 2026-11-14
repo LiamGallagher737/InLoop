@@ -59,6 +59,9 @@ pub struct Decision {
     /// number (D-P5PT). Kept as written.
     pub aliases: Vec<String>,
     pub tags: Vec<String>,
+    /// Who accepted or rejected a proposed decision: a person, or `agent`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub promoted_by: Option<String>,
     /// Everything after the frontmatter.
     pub body: String,
     /// Frontmatter keys InLoop doesn't know. Lint reports them.
@@ -87,6 +90,8 @@ struct Frontmatter {
     aliases: Option<Vec<serde_yaml_ng::Value>>,
     #[serde(default)]
     tags: Option<Vec<serde_yaml_ng::Value>>,
+    #[serde(default)]
+    promoted_by: Option<String>,
     #[serde(flatten)]
     extra: BTreeMap<String, serde_yaml_ng::Value>,
 }
@@ -197,6 +202,7 @@ impl Decision {
                 .iter()
                 .filter_map(value_to_string)
                 .collect(),
+            promoted_by: f.promoted_by.filter(|p| !p.trim().is_empty()),
             body: body.to_string(),
             unknown_keys: f.extra.into_keys().collect(),
         })
@@ -228,6 +234,9 @@ impl Decision {
         ));
         s.push_str(&format!("aliases: {}\n", yaml_list(&self.aliases)));
         s.push_str(&format!("tags: {}\n", yaml_list(&self.tags)));
+        if let Some(p) = &self.promoted_by {
+            s.push_str(&format!("promoted_by: {}\n", yaml_scalar(p)));
+        }
         s.push_str("---\n");
         if !self.body.starts_with('\n') {
             s.push('\n');

@@ -1,0 +1,22 @@
+description = "curl invocations with basic auth, headers, query-string tokens and webhook URLs"
+input = "input.sh"
+secrets = [
+    "Fake-Curl-Pass-4242",
+    "ZGVwbG95LWJvdDpFWEFNUExFLWZha2UtcGFzcy0wMDAw",
+    "9fEXAMPLEfakeApiKey0000qwerty77",
+    "EXAMPLEfakeAccessToken0000aBcD1234",
+    "https://hooks.slack.com/services/T0EXAMPLE/B0FAKE0000/EXAMPLEfakeHook01EXAMPLE",
+    "ghp_TESTfake9876ZYXWexample54TESTfake987",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlLXVzZXItMDAwMCIsIm5hbWUiOiJFeGFtcGxlIFRlc3QiLCJpYXQiOjE3MDAwMDAwMDB9.EXAMPLEfakeSignature0_-9EXAMPLEfakeSignatur",
+    "EAAGEXAMPLEfake0Meta1Token2ZDZDEXAMPLEfake0Meta1Token2ZDZDEXAMPLEfake0Meta1Token2ZDZDEXAMPLEfake0Meta1Token2ZDZDEXAMPLEfake0Meta1Token2ZDZDEXAMPLEfake0Meta1Token2ZD",
+]
+survive = [
+    "https://ci.example.com/api/json",
+    "?limit=50&page=2",
+    "&format=csv",
+    "4f2a9c1e8b7d6a5f4e3c2b1a0f9e8d7c6b5a4f3e",
+    "jq .status",
+    "Bearer $GITHUB_TOKEN",
+    "deployed v1.4.2",
+    "graph.facebook.com/v21.0/me/adaccounts",
+]

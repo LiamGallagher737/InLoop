@@ -1,0 +1,26 @@
+[package]
+name = "inloop-app"
+description = "InLoop's operations, shared by the CLI and the MCP server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+inloop-core = { path = "../core" }
+inloop-git = { path = "../git" }
+inloop-decisions = { path = "../decisions" }
+inloop-index = { path = "../index" }
+inloop-redact = { path = "../redact" }
+inloop-sessions = { path = "../sessions" }
+inloop-store = { path = "../store" }
+jiff.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

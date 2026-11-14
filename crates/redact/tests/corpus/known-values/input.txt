@@ -1,0 +1,10 @@
+The service password is correct-horse-battery-staple-42, don't share it.
+legacy client sends plainlowercasesecretvalue in a custom header
+encoded for the config map: Y29ycmVjdC1ob3JzZS1iYXR0ZXJ5LXN0YXBsZS00Mg==
+url-safe encoded signer: WnE3K0VYQU1QTEUvZmFrZTpTaWduaW5nOSBYdyE
+standard encoded signer: WnE3K0VYQU1QTEUvZmFrZTpTaWduaW5nOSBYdyE=
+form post body: signing=Zq7%2BEXAMPLE%2Ffake%3ASigning9%20Xw%21&mode=test
+{"tool_result": "QUOTED_SECRET is pa\"ss\\word-EXAMPLE-77 (from .env)"}
+blob: c3ZjLWFjY291bnQ6Y29ycmVjdC1ob3JzZS1iYXR0ZXJ5LXN0YXBsZS00MjtzY29wZT1hbGw=
+db password from the URL, decoded: Weird/Pass@word-11
+APP_NAME is ExampleBillingService and it listens on 8080

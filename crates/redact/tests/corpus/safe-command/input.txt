@@ -1,0 +1,5 @@
+total 24
+drwxr-xr-x   6 dev  staff   192 14 Nov 10:21 .
+-rw-r--r--   1 dev  staff   812 14 Nov 10:20 .env
+-rw-r--r--   1 dev  staff  1204 14 Nov 10:19 Cargo.toml
+-rw-r--r--   1 dev  staff    97 14 Nov 10:19 notes.txt  # contains ghp_EXAMPLEfakeTOKEN0123abcdEXAMPLEfakeT

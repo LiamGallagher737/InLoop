@@ -2,13 +2,19 @@
 resolver = "3"
 members = [
   "crates/core",
+  "crates/redact",
   "crates/git",
   "crates/decisions",
   "crates/index",
+  "crates/sessions",
+  "crates/store",
+  "crates/app",
+  "crates/mcp",
+  "crates/cli",
 ]
 # Crates under construction that are not yet part of the build.
 exclude = [
-  "crates/redact",
+  "crates/pm",
 ]
 
 [workspace.package]
@@ -23,6 +29,7 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 unwrap_used = "deny"
 expect_used = "deny"
+panic = "deny"
 
 [workspace.dependencies]
 anyhow = "1"
