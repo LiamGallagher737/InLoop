@@ -59,7 +59,7 @@ crates/            Rust workspace members (docs/01), not created yet
 
 ## Project facts
 
-- Owner: Liam Gallagher. Closed source for now (D-VMRP, proposed).
+- Owner: Liam Gallagher. Closed source for now (D-VMRP).
 - Language: Rust, edition 2024, latest stable toolchain.
 - First users: Liam's own projects (Adpatch, Cirkit) and their co-founders, all on Claude Code.
 - Docs are written in NZ English. No em dashes.

@@ -6,7 +6,7 @@ name = "InLoop"
 main_branch = "main"
 
 [decisions]
-dir = "docs/decisions"   # D-SJBG (proposed)
+dir = "docs/decisions"   # D-SJBG
 id_prefix = "D"
 id_length = 4            # Crockford base32 characters after the prefix (D-11JK)
 

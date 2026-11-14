@@ -30,6 +30,8 @@ InLoop keeps three kinds of data in three places, each chosen for how it needs t
 
 The index is derived data. It can always be rebuilt from the decision files on every branch and worktree plus the session store's metadata.
 
+The PM board, when the PM layer is on, is the exception: it is primary data, local to one clone and not backed up. Deleting or re-cloning the repo loses it; `inloop board export` keeps a copy (D-SRGY).
+
 ## Finding worktrees
 
 InLoop never assumes where worktrees live. It runs `git worktree list --porcelain` (or the `gix` equivalent) to find every worktree of the current clone, wherever it is on disk (D-CXS5). For each one it records the path, branch, HEAD and how far it is ahead of and behind the main branch.

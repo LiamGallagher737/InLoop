@@ -1,10 +1,10 @@
 ---
 id: D-Y40K
 title: "Only the PM writes the board; children report"
-status: proposed
+status: accepted
 date: 2026-11-14
-decided_by: agent
-basis: null
+decided_by: Liam
+basis: "All of the straightforward ones you recommend accepting, I agree with. They can all be accepted."
 session: design discussion 2026-11-14, before InLoop existed (not captured)
 supersedes: []
 superseded_by: null
@@ -24,4 +24,4 @@ The PM is the only writer of the board. Children call `task_report` and `task_bl
 
 Matches how the hand-kept boards already work.
 
-Proposed by the agent during the design discussion; needs Liam's call.
+Proposed by the agent in the design discussion; accepted by Liam in the phase 0 review, 2026-11-14.

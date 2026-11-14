@@ -1,10 +1,10 @@
 ---
 id: D-VMRP
-title: "Closed source for now; a free CLI and paid team features if it becomes a business"
-status: proposed
+title: "Closed source for now"
+status: accepted
 date: 2026-11-14
-decided_by: agent
-basis: null
+decided_by: Liam
+basis: "D-VMRP: Closed"
 session: design discussion 2026-11-14, before InLoop existed (not captured)
 supersedes: []
 superseded_by: null
@@ -18,10 +18,10 @@ Liam may share InLoop with friends and co-founders, and possibly turn it into a 
 
 ## Decision
 
-Keep the code closed for now, owned outright. If it becomes a product: the CLI free, hosted team features paid (docs/09).
+Keep the code closed for now, owned outright, so any licence stays possible later.
 
 ## Consequences
 
-No business features are built until dogfooding proves the tool.
+Third-party code is used under licences compatible with closed source (for example gitleaks' MIT ruleset), listed in a third-party notices file. The shape of a possible business is a separate decision (D-QDYH).
 
-Proposed by the agent during the design discussion; needs Liam's call.
+Proposed by the agent in the design discussion; accepted by Liam in the phase 0 review, 2026-11-14. The business shape it originally included was split out to D-QDYH, since Liam's answer covered the licence only.

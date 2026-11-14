@@ -17,7 +17,7 @@ Personal settings (session store credentials, the age key's location) live outsi
 
 | Key | Default | Meaning |
 |---|---|---|
-| `dir` | `docs/decisions` | Where decision files live (D-SJBG, proposed) |
+| `dir` | `docs/decisions` | Where decision files live (D-SJBG) |
 | `id_prefix` | `D` | The letter before the dash |
 | `id_length` | `4` | Crockford base32 characters after the dash |
 

@@ -18,13 +18,13 @@ Other names considered: `crewlog` (crate free, `crewlog.dev` and `.sh` free), `h
 
 ## Licence
 
-Closed source for now (D-VMRP, proposed). Liam owns all the code outright, so any licence stays possible later. If parts are opened, the redaction engine is the best first candidate: useful to many people on its own, and safer with outside review.
+Closed source for now (D-VMRP). Third-party code is used only under licences that allow that, and listed in a third-party notices file. Liam owns all the code outright, so any licence stays possible later. If parts are opened, the redaction engine is the best first candidate: useful to many people on its own, and safer with outside review.
 
 ## A possible business later
 
 Session capture on its own is a crowded space. What InLoop combines is less common: decisions agents can't collide on, an optional PM workflow with computed conflict checks, and strong redaction with client-side encryption.
 
-The likely shape (D-VMRP, proposed):
+The likely shape (D-QDYH):
 
 - **Free:** the local CLI and MCP server, with local or bring-your-own-bucket session storage.
 - **Paid:** hosted team features: instant board claims across people, a combined team view, notifications, a web viewer for decisions and sessions, and team key management.

@@ -1,6 +1,6 @@
 # 08 Roadmap
 
-Build order (D-JZT3): decisions first because they are the actual pain and the smallest piece; redaction before anything stores transcripts; then sessions; then the optional PM layer, built on what the earlier phases create.
+Build order (D-JZT3): decisions first because they are the actual pain and the smallest piece, with a minimal redactor so nothing is ever written outside the gate (D-VH2N); the full redactor before anything stores transcripts; then sessions; then the optional PM layer, built on what the earlier phases create.
 
 ## Phase 0: design (now)
 
@@ -9,8 +9,9 @@ Build order (D-JZT3): decisions first because they are the actual pain and the s
 
 ## Phase 1: decisions
 
-- Workspace with `core`, `git`, `decisions`, `index`, `mcp`, `cli`.
-- ID generation with collision checks across worktrees and remote branches.
+- Workspace with `core`, `redact`, `git`, `decisions`, `index`, `mcp`, `cli`.
+- A minimal `redact` crate: the `Redacted<T>` gate (D-VNK6) with the known-values layer and a starter set of provider patterns. Every decision write goes through it (D-VH2N).
+- ID generation with collision checks across worktrees and remote branches; no all-digit IDs (D-P5PT).
 - Parse, validate, create, supersede, accept and reject decision files.
 - Worktree discovery anywhere on disk; reading decisions from unchecked-out branches.
 - SQLite FTS5 index in the git common directory.
@@ -22,9 +23,8 @@ Build order (D-JZT3): decisions first because they are the actual pain and the s
 
 ## Phase 2: redaction
 
-- The `redact` crate with all five layers and the `Redacted<T>` gate.
+- The rest of the `redact` crate: context plus entropy, whole outputs, project rules, and the full gitleaks provider ruleset.
 - The test corpus, wired into CI.
-- Decisions written through the redactor from now on.
 - **Exit:** the corpus passes with no known misses; redaction runs on every write path that exists.
 
 ## Phase 3: sessions
@@ -47,7 +47,7 @@ Build order (D-JZT3): decisions first because they are the actual pain and the s
 
 - Board sync over a git ref; hosted team sync (docs/05, docs/09).
 - More agent sources beyond Claude Code.
-- Generic collections: other append-only logs (misconceptions, dogfood notes) as one file per entry with the same IDs and search (D-Y1DQ, proposed).
+- Generic collections: other append-only logs (misconceptions, dogfood notes) as one file per entry with the same IDs and search (D-Y1DQ).
 - Archive folder for old decisions in big projects.
 - Embedding-based search if full-text search feels weak.
 

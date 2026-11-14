@@ -4,7 +4,7 @@ InLoop captures agent sessions so the reasoning behind a change can be found lat
 
 ## Capture
 
-The first agent source is Claude Code, which both Liam and his co-founders use (D-TBR6, proposed). Claude Code already writes each session as JSONL under `~/.claude/projects/<project-slug>/`. InLoop:
+The first agent source is Claude Code, which both Liam and his co-founders use (D-TBR6). Claude Code already writes each session as JSONL under `~/.claude/projects/<project-slug>/`. InLoop:
 
 1. installs Claude Code hooks (`Stop`, `PreCompact`, `SessionEnd`) with `inloop init`, which call `inloop session capture`
 2. reads the session's transcript from the hook input
@@ -33,7 +33,7 @@ Together these give the chain from a decision, to the conversation where it was 
 
 ## Storage
 
-Storage is designed as if InLoop may become a product used by people outside Liam's projects, so it is not tied to any one provider or to anything Adpatch uses (D-T1C2, proposed).
+Storage is designed as if InLoop may become a product used by people outside Liam's projects, so it is not tied to any one provider or to anything Adpatch uses (D-T1C2).
 
 - **A `SessionStore` trait** with two backends:
   - `local`: a directory on disk. The default, no setup.

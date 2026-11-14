@@ -35,7 +35,7 @@ InLoop doesn't start sessions or try to be the PM (D-E2GZ). The PM is an agent b
 
 ## Who writes the board
 
-The PM is the only writer of the board. Children report through `task_report` and `task_blocked`, and the PM folds those into the board (D-Y40K, proposed). This keeps one writer, which is what made the hand-kept board work.
+The PM is the only writer of the board. Children report through `task_report` and `task_blocked`, and the PM folds those into the board (D-Y40K). This keeps one writer, which is what made the hand-kept board work.
 
 ## Statuses
 
@@ -49,7 +49,7 @@ The PM tools are a separate MCP toolset, registered only when the PM layer is en
 
 With more than one person on a project, two people (each with their own PM) could pick up the same task. Within one person's PM that never happens; across people it can. So:
 
-- **Now:** the board is local, but stored as one record per task and per claim, each with a stable ID, owner and timestamps, so records merge cleanly and adding sync later isn't a rewrite (D-V3ZM, proposed).
+- **Now:** the board is local, but stored as one record per task and per claim, each with a stable ID, owner and timestamps, so records merge cleanly and adding sync later isn't a rewrite (D-V3ZM).
 - **Later, free:** sync the board through a custom git ref (`refs/inloop/board`) that travels with the repo but isn't a branch. It only updates on fetch, so a race between fetches is still possible.
 - **Later, paid:** a hosted service with instant claims that refuses a duplicate claim immediately, a combined view across everyone's PMs, notifications and a web board (docs/09).
 

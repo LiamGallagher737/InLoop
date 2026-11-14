@@ -39,7 +39,7 @@ Until `inloop dec new` works, agents write decision files by hand in the exact f
    git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r w; do ls "$w/docs/decisions" 2>/dev/null; done | grep -c "$id"
    ```
 
-   Anything but `0` means pick another.
+   Anything but `0` means pick another. So does an ID that is all digits (D-P5PT).
 4. **Write** `docs/decisions/<id>-<short-slug>.md` with the frontmatter and the Context, Decision and Consequences sections.
 5. **To find decisions**, search the folder: `grep -ril "<term>" docs/decisions`.
 

@@ -7,6 +7,7 @@ The decision log is the part of InLoop most agents will touch most often. It rep
 - Format: `D-` followed by 4 Crockford base32 characters, for example `D-7KQ2` (D-11JK).
 - Alphabet: `0123456789ABCDEFGHJKMNPQRSTVWXYZ` (no I, L, O or U, so no look-alikes). Input is case-insensitive, and `I`/`L` read as `1`, `O` as `0`, as Crockford specifies.
 - Generated randomly where the decision is made. No coordination, no allocation, no "next number".
+- Never all digits, so a new ID can't be mistaken for, or clash with, an old sequential number kept as an alias (D-P5PT). IDs created before this rule (D-0217, D-1371) keep their IDs.
 - 4 characters gives about a million IDs. At hundreds of decisions per project a collision is very unlikely, and the tool checks every branch and worktree it can see before using an ID, retrying on a clash. `inloop lint` catches anything that slips through on separate machines.
 - An ID never changes once created. References in code, docs and commit messages stay valid forever.
 - The prefix and length are configurable (`[decisions]` in `inloop.toml`), for projects that want more characters.
@@ -61,7 +62,7 @@ What follows from it, including what it rules out.
 | `basis` | Required for `accepted`: a quote of the human's words, or a pointer to where they said it |
 | `session` | The session it was recorded in, when known |
 | `supersedes` / `superseded_by` | Links between a decision and the one that replaced it |
-| `aliases` | Other IDs that resolve to this decision, such as an old sequential number (D-P5PT, proposed) |
+| `aliases` | Other IDs that resolve to this decision, such as an old sequential number (D-P5PT) |
 | `tags` | Free-form, for search and filtering |
 
 ## The basis rule
@@ -88,7 +89,7 @@ Search and listing include decisions that exist only on other branches and workt
 `inloop lint` checks:
 
 - every file parses, and its `id` matches its filename
-- no two decisions share an ID (across every branch it can see)
+- no two decisions share an ID (across every branch it can see), and no alias equals any decision's ID
 - `accepted` decisions have a `basis`
 - references (`D-XXXX` in docs and code) point at decisions that exist
 - references to superseded decisions, flagged so the citing text can be updated
@@ -98,7 +99,7 @@ Search and listing include decisions that exist only on other branches and workt
 Projects already using a single `decisions.md` with sequential numbers (Adpatch and Cirkit both do) move over once, with a throwaway script, not a compatibility mode (D-6QJK):
 
 1. Split each entry into its own file with a new random ID.
-2. Put the old number in `aliases`, so `inloop dec show D-264` still works for old commit messages, which can't be rewritten (D-P5PT, proposed).
+2. Put the old number in `aliases`, so `inloop dec show D-264` still works for old commit messages, which can't be rewritten (D-P5PT).
 3. Search and replace the old numbers across the repo's docs and code with the new IDs.
 4. Delete the old file.
 

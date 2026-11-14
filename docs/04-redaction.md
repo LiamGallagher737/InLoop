@@ -4,7 +4,11 @@ Everything InLoop stores goes through one redactor first: transcripts, summaries
 
 ## The gate is a type
 
-The storage layer only accepts `Redacted<T>`. Only the `redact` crate can construct one, by running the redactor (D-VNK6, proposed). So there is no write path that can skip redaction by accident: a new kind of record that isn't redacted won't compile.
+The storage layer only accepts `Redacted<T>`. Only the `redact` crate can construct one, by running the redactor (D-VNK6). So there is no write path that can skip redaction by accident: a new kind of record that isn't redacted won't compile.
+
+`Redacted<T>` implements none of `Deserialize`, `DerefMut`, `From` or `Default`: each would be a second way to build or change one without the redactor. Data read back from storage is plain `T`, and goes through the redactor again before it is stored again.
+
+The gate and the first two layers ship in phase 1, so decisions are redacted from the first release (D-VH2N). The other layers follow in phase 2.
 
 ```rust
 pub struct Redacted<T>(T);   // no public constructor
