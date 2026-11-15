@@ -22,6 +22,15 @@
 - Docs are the source of truth. If code and docs disagree, one of them is a bug; fix it in the same commit.
 - Public text and examples use neutral placeholders (example.com, USD, a generic company), never a real customer.
 
+## Releases
+
+Releases are built by `.github/workflows/release.yml` and run only when a version tag is pushed, never on ordinary pushes. To cut one:
+
+1. Bump `version` in the root `Cargo.toml` and commit it.
+2. Tag that commit `v<version>` (for example `v0.2.0`) and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
+
+The workflow checks the tag matches the workspace version, runs the tests, builds `inloop` for Linux (x86_64, arm64), macOS (Apple silicon, Intel) and Windows (x86_64), and creates a GitHub release with the archives, a `SHA256SUMS` file and generated notes. A tag with a suffix (`v0.2.0-rc.1`) makes a prerelease.
+
 ## Recording decisions
 
 Use `inloop dec new` (or the `decision_new` MCP tool): it picks a free ID, checks every worktree and branch, and writes through the redactor. Find decisions with `inloop search` or `decision_search`.
