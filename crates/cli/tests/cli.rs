@@ -187,3 +187,55 @@ fn secrets_never_reach_a_decision_file() {
     assert!(!text.contains("sk_live_51HxEXAMPLE"), "{text}");
     assert!(text.contains("[REDACTED:"), "{text}");
 }
+
+#[test]
+fn ids_work_without_the_prefix_and_in_batches() {
+    let r = Repo::new();
+    let new = |title: &str| {
+        r.json(&[
+            "dec",
+            "new",
+            "--title",
+            title,
+            "--context",
+            "c",
+            "--decision",
+            "d",
+            "--consequences",
+            "e",
+        ])["id"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+    let (a, b, c) = (new("One"), new("Two"), new("Three"));
+    let bare = |id: &str| id.trim_start_matches("D-").to_lowercase();
+
+    // Show without the prefix, in any case.
+    let d = r.json(&["dec", "show", &bare(&a)]);
+    assert_eq!(d["id"], a.as_str());
+
+    // A typo in a batch changes nothing.
+    let out = r.run(&["dec", "accept", &bare(&a), "ZZZZ", "--basis", "yes"]);
+    assert!(!out.status.success());
+    assert!(stderr(&out).contains("nothing changed"), "{}", stderr(&out));
+    assert_eq!(r.json(&["dec", "show", &a])["status"], "proposed");
+
+    // Accept two at once, one bare, one with its prefix.
+    let w = r.json(&["dec", "accept", &bare(&a), &b, "--basis", "Both, yes."]);
+    assert_eq!(w.as_array().map(Vec::len), Some(2));
+    let shown = r.json(&["dec", "show", &a, &bare(&b), &c]);
+    let statuses: Vec<_> = shown
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| d["status"].as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(statuses, ["accepted", "accepted", "proposed"]);
+
+    // One already accepted: the rest still go through, the exit code says so.
+    let out = r.run(&["dec", "reject", &bare(&a), &bare(&c)]);
+    assert!(!out.status.success());
+    assert!(stderr(&out).contains(&a), "{}", stderr(&out));
+    assert_eq!(r.json(&["dec", "show", &c])["status"], "rejected");
+}

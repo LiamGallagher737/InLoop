@@ -199,6 +199,19 @@ fn a_full_batch_runs_on_the_board() {
     let board = r.json(&["board"]);
     assert_eq!(board["newly_unblocked"], serde_json::json!([c_id]));
 
+    // Several tasks at once, prefix left off.
+    let bare = |id: &str| id.trim_start_matches("T-").to_string();
+    let both = r.json(&["task", "show", &bare(&a_id), &bare(&c_id)]);
+    let ids: Vec<_> = both
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t["id"].as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(ids, [a_id.clone(), c_id.clone()]);
+    let out = r.run(&["task", "update", &bare(&c_id), "T-ZZZZ", "--note", "x"]);
+    assert!(!out.status.success());
+
     // B gets blocked on a human question.
     r.json(&[
         "task", "update", &b_id, "--status", "running", "--branch", "task-b",

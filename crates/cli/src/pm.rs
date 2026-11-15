@@ -24,12 +24,20 @@ pub enum BoardCmd {
 pub enum TaskCmd {
     /// Add a task.
     New(TaskNewArgs),
-    /// Show a task with its claims, reports and blockers.
-    Show { id: String },
+    /// Show tasks with their claims, reports and blockers.
+    Show {
+        /// One or more IDs; the `T-` prefix is optional.
+        #[arg(required = true)]
+        ids: Vec<String>,
+    },
     /// Change a task.
     Update(TaskUpdateArgs),
-    /// Print the generated brief for a task's session.
-    Brief { id: String },
+    /// Print the generated brief for each task's session.
+    Brief {
+        /// One or more IDs; the `T-` prefix is optional.
+        #[arg(required = true)]
+        ids: Vec<String>,
+    },
     /// Conflict check: the given tasks (default: every ready one) plus every running one.
     Check { ids: Vec<String> },
     /// Report the end of work on a task (what a task session does through MCP).
@@ -55,7 +63,9 @@ pub struct TaskNewArgs {
 
 #[derive(Args)]
 pub struct TaskUpdateArgs {
-    pub id: String,
+    /// One or more IDs, all given the same change; the `T-` prefix is optional.
+    #[arg(required = true)]
+    pub ids: Vec<String>,
     #[arg(long)]
     pub status: Option<String>,
     #[arg(long)]
@@ -301,9 +311,9 @@ pub fn task(ctx: &Ctx, cmd: TaskCmd) -> anyhow::Result<ExitCode> {
                 )
             })?;
         }
-        TaskCmd::Show { id } => {
-            let v = p.task_get(&id)?;
-            ctx.emit(&v, |s| {
+        TaskCmd::Show { ids } => {
+            let (views, code) = crate::each_id(&ids, |id| Ok(p.task_get(id)?));
+            ctx.emit_each(&views, |s, v| {
                 let mut out = task_text(s, &v.task);
                 for r in &v.reports {
                     out.push_str(&format!(
@@ -323,6 +333,7 @@ pub fn task(ctx: &Ctx, cmd: TaskCmd) -> anyhow::Result<ExitCode> {
                 }
                 out
             })?;
+            return Ok(code);
         }
         TaskCmd::Update(a) => {
             let status = match a.status {
@@ -347,26 +358,48 @@ pub fn task(ctx: &Ctx, cmd: TaskCmd) -> anyhow::Result<ExitCode> {
                 add_note: a.note,
                 add_decisions: a.decisions,
             };
-            let o = p.task_update(&a.id, update, &who)?;
-            ctx.emit(&o.task, |s| {
+            // Every ID must name a task before any of them changes.
+            let missing: Vec<&str> = a
+                .ids
+                .iter()
+                .filter(|id| p.task_get(id).is_err())
+                .map(String::as_str)
+                .collect();
+            if !missing.is_empty() {
+                anyhow::bail!("no task {}; nothing changed", missing.join(", "));
+            }
+            let (tasks, code) = crate::each_id(&a.ids, |id| {
+                Ok(p.task_update(id, update.clone(), &who)?.task)
+            });
+            ctx.emit_each(&tasks, |s, t| {
                 format!(
                     "{} {} is {}\n",
                     s.green("✓"),
-                    o.task.id,
-                    s.status(o.task.status.label())
+                    t.id,
+                    s.status(t.status.label())
                 )
             })?;
+            return Ok(code);
         }
-        TaskCmd::Brief { id } => {
-            let b = p.task_brief(&id)?;
+        TaskCmd::Brief { ids } => {
+            let (briefs, code) = crate::each_id(&ids, |id| Ok(p.task_brief(id)?));
             if ctx.json {
-                println!("{}", serde_json::to_string_pretty(&b)?);
+                match briefs.as_slice() {
+                    [one] => println!("{}", serde_json::to_string_pretty(one)?),
+                    all => println!("{}", serde_json::to_string_pretty(all)?),
+                }
             } else {
-                print!("{}", b.text);
-                if let Some(w) = b.warning() {
-                    eprintln!("{} {w}", ctx.style.yellow("warning:"));
+                for (i, b) in briefs.iter().enumerate() {
+                    if i > 0 {
+                        println!("\n---\n");
+                    }
+                    print!("{}", b.text);
+                    if let Some(w) = b.warning() {
+                        eprintln!("{} {w}", ctx.style.yellow("warning:"));
+                    }
                 }
             }
+            return Ok(code);
         }
         TaskCmd::Check { ids } => {
             let r = p.board_check(&ids)?;

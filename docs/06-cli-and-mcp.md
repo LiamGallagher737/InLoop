@@ -11,10 +11,10 @@ Core, always available:
 ```
 inloop init                       set up a repo: inloop.toml, decisions dir, Claude Code hooks
 inloop dec new                    record a decision (interactive, or flags)
-inloop dec show <id>              render one decision
+inloop dec show <id>...           render decisions
 inloop dec list [filters]         table of decisions: --status, --tag, --unmerged, --since
 inloop dec search <query>         ranked results with matching snippets
-inloop dec accept|reject <id>     promote or reject a proposed decision
+inloop dec accept|reject <id>...  promote or reject proposed decisions
 inloop dec supersede <old> <new>  link a replacement
 inloop session list|show|search   find captured sessions (show --transcript for the full text)
 inloop session capture            capture now (--backfill for anything missed)
@@ -31,13 +31,20 @@ PM layer, only when enabled:
 
 ```
 inloop board [export|fold]        show the board, write it as Markdown, or fold in reports and blockers
-inloop task new|show|update       manage task records
-inloop task brief <id>            print the generated brief
+inloop task new|show|update       manage task records (show and update take several IDs)
+inloop task brief <id>...         print the generated briefs
 inloop task check [ids]           conflict check: the given (or ready) tasks plus running ones
 inloop task report|blocked        what a task session reports (usually through MCP)
 ```
 
 `dec` is short for `decision`; both work.
+
+### IDs
+
+- **The prefix is optional.** `7KQ2` means `D-7KQ2` wherever a decision ID is expected, and `4M1P` means `T-4M1P` wherever a task ID is. Case and Crockford look-alikes are forgiven as usual. An old alias number works the same way: `264` reads as `D-264`. This applies to MCP tool arguments too.
+- **Commands that act on one record take several.** `dec show`, `dec accept`, `dec reject`, `task show`, `task update` and `task brief` take any number of IDs, so accepting a list a human just approved is one command: `inloop dec accept 7KQ2 P5PT 0217`. Every ID gets the same flags (`--basis`, `--status` and so on).
+- **A batch checks first, then carries on.** Commands that change records check every ID names one before changing anything, so a typo changes nothing. Past that, a failure on one ID (say, a decision that is already accepted) is reported on stderr and the rest still run; the exit code is non-zero if any failed.
+- **`--json` keeps its shape for one ID**: one ID gives the object as before, several give an array.
 
 ### Output rules
 

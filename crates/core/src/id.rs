@@ -65,10 +65,26 @@ impl IdSpec {
         })
     }
 
+    /// Add this spec's prefix to a bare ID body, so `7KQ2` reads as
+    /// `D-7KQ2` and an old alias number `264` as `D-264`. Text that already
+    /// has a dash, or isn't plain letters and digits, comes back unchanged.
+    pub fn qualify(&self, text: &str) -> String {
+        let text = text.trim();
+        if !text.is_empty()
+            && !text.contains('-')
+            && text.bytes().all(|b| b.is_ascii_alphanumeric())
+        {
+            format!("{}-{}", self.prefix, text)
+        } else {
+            text.to_string()
+        }
+    }
+
     /// Parse `text` as an ID of this shape, normalising case and Crockford
-    /// look-alikes (`I`/`L` read as `1`, `O` as `0`).
+    /// look-alikes (`I`/`L` read as `1`, `O` as `0`). The prefix may be left
+    /// off (`7KQ2` for `D-7KQ2`).
     pub fn parse(&self, text: &str) -> Result<Id, IdError> {
-        let id = Id::parse_loose(text)?;
+        let id = Id::parse_loose(&self.qualify(text))?;
         let (prefix, body) = id.split();
         if !prefix.eq_ignore_ascii_case(&self.prefix) || body.len() != self.length {
             return Err(IdError::WrongShape {
@@ -225,6 +241,20 @@ mod tests {
         assert!(spec.parse("T-7KQ2").is_err());
         assert!(spec.parse("D-7KU2").is_err());
         assert!(Id::parse_loose("nonsense").is_err());
+    }
+
+    #[test]
+    fn the_prefix_can_be_left_off() {
+        let spec = IdSpec::decisions();
+        assert_eq!(spec.parse("7kq2").map(|i| i.0), Ok("D-7KQ2".into()));
+        assert_eq!(
+            IdSpec::tasks().parse(" 4M1P ").map(|i| i.0),
+            Ok("T-4M1P".into())
+        );
+        assert_eq!(spec.qualify("264"), "D-264");
+        assert_eq!(spec.qualify("D-7KQ2"), "D-7KQ2");
+        assert_eq!(spec.qualify("not an id"), "not an id");
+        assert!(spec.parse("7KQ").is_err());
     }
 
     #[test]

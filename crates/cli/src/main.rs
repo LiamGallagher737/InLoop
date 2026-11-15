@@ -108,6 +108,54 @@ impl Ctx {
         }
         Ok(())
     }
+
+    /// Emit the results of a command given several IDs: the bare object for
+    /// one ID (so single-ID output is unchanged), an array for several.
+    pub fn emit_each<T: Serialize>(
+        &self,
+        values: &[T],
+        human: impl Fn(&Style, &T) -> String,
+    ) -> anyhow::Result<()> {
+        match values {
+            [] if !self.json => Ok(()),
+            [one] => self.emit(one, |s| human(s, one)),
+            _ => self.emit(&values, |s| {
+                values
+                    .iter()
+                    .map(|v| human(s, v))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            }),
+        }
+    }
+}
+
+/// Run `f` on each ID in turn, carrying on past failures so one bad ID
+/// doesn't stop the rest. Failures go to stderr; the exit code says whether
+/// every ID worked.
+pub fn each_id<T>(
+    ids: &[String],
+    mut f: impl FnMut(&str) -> anyhow::Result<T>,
+) -> (Vec<T>, ExitCode) {
+    let mut done = Vec::new();
+    let mut failed = false;
+    for id in ids {
+        match f(id) {
+            Ok(v) => done.push(v),
+            Err(e) => {
+                failed = true;
+                eprintln!("error: {id}: {e:#}");
+            }
+        }
+    }
+    (
+        done,
+        if failed {
+            ExitCode::FAILURE
+        } else {
+            ExitCode::SUCCESS
+        },
+    )
 }
 
 fn main() -> ExitCode {

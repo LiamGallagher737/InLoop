@@ -18,10 +18,11 @@ use crate::output::{self, Style};
 pub enum DecCmd {
     /// Record a decision (prompts for anything missing when run in a terminal).
     New(NewArgs),
-    /// Show one decision.
+    /// Show decisions.
     Show {
-        /// ID or alias, e.g. D-7KQ2 or D-264.
-        id: String,
+        /// IDs or aliases, e.g. D-7KQ2, 7KQ2 or D-264. The prefix is optional.
+        #[arg(required = true)]
+        ids: Vec<String>,
     },
     /// List decisions, newest first.
     List(ListArgs),
@@ -32,9 +33,11 @@ pub enum DecCmd {
         #[arg(long, default_value_t = 10)]
         limit: usize,
     },
-    /// Accept a proposed decision. You are the human deciding.
+    /// Accept proposed decisions. You are the human deciding.
     Accept {
-        id: String,
+        /// One or more IDs; the `D-` prefix is optional.
+        #[arg(required = true)]
+        ids: Vec<String>,
         /// Your words: why you accept it. Defaults to "Accepted by <you>".
         #[arg(long)]
         basis: Option<String>,
@@ -42,9 +45,11 @@ pub enum DecCmd {
         #[arg(long)]
         by: Option<String>,
     },
-    /// Reject a proposed decision.
+    /// Reject proposed decisions.
     Reject {
-        id: String,
+        /// One or more IDs; the `D-` prefix is optional.
+        #[arg(required = true)]
+        ids: Vec<String>,
         /// Why, in your words.
         #[arg(long)]
         reason: Option<String>,
@@ -100,26 +105,36 @@ pub struct ListArgs {
 pub fn run(ctx: &Ctx, cmd: DecCmd) -> anyhow::Result<ExitCode> {
     match cmd {
         DecCmd::New(a) => new(ctx, a),
-        DecCmd::Show { id } => show(ctx, &id),
+        DecCmd::Show { ids } => show(ctx, &ids),
         DecCmd::List(a) => list(ctx, a),
         DecCmd::Search { query, limit } => search(ctx, &query.join(" "), &[Kind::Decision], limit),
-        DecCmd::Accept { id, basis, by } => {
+        DecCmd::Accept { ids, basis, by } => {
             let p = ctx.project()?;
             let who = by
                 .or_else(|| p.git_user())
                 .unwrap_or_else(|| "unknown".into());
             let basis =
                 basis.unwrap_or_else(|| format!("Accepted by {who} with `inloop dec accept`."));
-            let w = p.decision_promote(&id, true, Some(basis), Some(who.clone()), &who)?;
-            ctx.emit(&w, |s| format!("{} {} accepted\n", s.green("✓"), w.id))?;
-            Ok(ExitCode::SUCCESS)
+            check_all_exist(&p, &ids)?;
+            let (done, code) = crate::each_id(&ids, |id| {
+                Ok(p.decision_promote(id, true, Some(basis.clone()), Some(who.clone()), &who)?)
+            });
+            ctx.emit_each(&done, |s, w| {
+                format!("{} {} accepted\n", s.green("✓"), w.id)
+            })?;
+            Ok(code)
         }
-        DecCmd::Reject { id, reason } => {
+        DecCmd::Reject { ids, reason } => {
             let p = ctx.project()?;
             let who = p.git_user().unwrap_or_else(|| "unknown".into());
-            let w = p.decision_promote(&id, false, reason, None, &who)?;
-            ctx.emit(&w, |s| format!("{} {} rejected\n", s.yellow("✓"), w.id))?;
-            Ok(ExitCode::SUCCESS)
+            check_all_exist(&p, &ids)?;
+            let (done, code) = crate::each_id(&ids, |id| {
+                Ok(p.decision_promote(id, false, reason.clone(), None, &who)?)
+            });
+            ctx.emit_each(&done, |s, w| {
+                format!("{} {} rejected\n", s.yellow("✓"), w.id)
+            })?;
+            Ok(code)
         }
         DecCmd::Supersede { old, new } => {
             let p = ctx.project()?;
@@ -230,11 +245,26 @@ pub fn where_line(s: &Style, e: &DecisionView) -> Option<String> {
     }
 }
 
-fn show(ctx: &Ctx, id: &str) -> anyhow::Result<ExitCode> {
+/// Before changing several decisions, make sure every ID names one, so a
+/// typo doesn't leave the batch half done.
+fn check_all_exist(p: &inloop_app::Project, ids: &[String]) -> anyhow::Result<()> {
+    let set = p.decision_set(true)?;
+    let missing: Vec<&str> = ids
+        .iter()
+        .filter(|id| set.get(&p.decision_ref(id)).is_none())
+        .map(String::as_str)
+        .collect();
+    if !missing.is_empty() {
+        bail!("no decision {}; nothing changed", missing.join(", "));
+    }
+    Ok(())
+}
+
+fn show(ctx: &Ctx, ids: &[String]) -> anyhow::Result<ExitCode> {
     let p = ctx.project()?;
-    let e = p.decision_get(id)?;
-    ctx.emit(&e, |s| render_decision(s, &e))?;
-    Ok(ExitCode::SUCCESS)
+    let (found, code) = crate::each_id(ids, |id| Ok(p.decision_get(id)?));
+    ctx.emit_each(&found, render_decision)?;
+    Ok(code)
 }
 
 pub fn render_decision(s: &Style, e: &DecisionView) -> String {

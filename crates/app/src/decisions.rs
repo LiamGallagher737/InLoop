@@ -163,9 +163,16 @@ impl Project {
         Ok(out)
     }
 
+    /// A decision reference as the user typed it, with the ID prefix added
+    /// when they left it off (`7KQ2` for `D-7KQ2`).
+    pub fn decision_ref(&self, id: &str) -> String {
+        self.config.decisions.id_spec().qualify(id)
+    }
+
     pub fn decision_get(&self, id: &str) -> Result<DecisionView, AppError> {
         let set = self.decision_set(true)?;
-        set.get(id)
+        let id = self.decision_ref(id);
+        set.get(&id)
             .cloned()
             .ok_or_else(|| AppError::NotFound(format!("decision {id}")))
     }
@@ -232,10 +239,11 @@ impl Project {
         promoted_by: &str,
     ) -> Result<Written, AppError> {
         let set = self.decision_set(true)?;
+        let id = self.decision_ref(id);
         let w = ops::promote(
             &set,
             self.redactor()?,
-            id,
+            &id,
             accept,
             basis,
             decided_by,
@@ -247,7 +255,8 @@ impl Project {
 
     pub fn decision_supersede(&self, old: &str, new: &str) -> Result<Written, AppError> {
         let set = self.decision_set(true)?;
-        let w = ops::supersede(&set, self.redactor()?, old, new)?;
+        let (old, new) = (self.decision_ref(old), self.decision_ref(new));
+        let w = ops::supersede(&set, self.redactor()?, &old, &new)?;
         self.decision_set(true)?;
         Ok(w)
     }

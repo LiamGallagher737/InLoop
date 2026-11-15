@@ -174,6 +174,12 @@ impl Project {
     ) -> Result<UpdateOutcome, AppError> {
         self.require_pm()?;
         let task = self.get_task(id)?;
+        let mut update = update;
+        update.add_decisions = update
+            .add_decisions
+            .iter()
+            .map(|d| self.decision_ref(d))
+            .collect();
         let tasks = self.tasks()?;
         let board = self.board();
         let claims = board.claims_for_task(&task.id).map_err(err)?;
@@ -308,8 +314,9 @@ impl Project {
 
     /// A child's structured end-of-work report. Doesn't change the task:
     /// the PM folds it in.
-    pub fn task_report(&self, new: NewReport) -> Result<Report, AppError> {
+    pub fn task_report(&self, mut new: NewReport) -> Result<Report, AppError> {
         self.require_pm()?;
+        new.decisions = new.decisions.iter().map(|d| self.decision_ref(d)).collect();
         self.get_task(new.task.as_str())?;
         let id = self.board().new_id(RecordKind::Report).map_err(err)?;
         let rep = inloop_pm::new_report(new, id, inloop_core::now());

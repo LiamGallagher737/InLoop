@@ -235,7 +235,9 @@ pub fn create(
     // Everything superseded must be here, so both files change together.
     let mut olds: Vec<(Entry, PathBuf)> = Vec::new();
     for s in &new.supersedes {
-        let e = set.get(s).ok_or_else(|| OpError::NotFound(s.clone()))?;
+        let e = set
+            .get(&spec.qualify(s))
+            .ok_or_else(|| OpError::NotFound(s.clone()))?;
         let p = here(e)?;
         olds.push((e.clone(), p));
     }
