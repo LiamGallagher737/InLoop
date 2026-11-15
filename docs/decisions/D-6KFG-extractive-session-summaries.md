@@ -1,15 +1,16 @@
 ---
 id: D-6KFG
 title: "Session summaries are built by InLoop from the transcript, with no model call"
-status: proposed
+status: accepted
 date: 2026-11-14
-decided_by: agent
-basis: null
+decided_by: Liam Gallagher
+basis: "Liam, after reviewing the nine proposed decisions in chat on 2026-11-15: \"Accept all nine\""
 session: overnight build of phases 1 to 4, 2026-11-14 (not captured)
 supersedes: []
 superseded_by: null
 aliases: []
 tags: [sessions, summaries]
+promoted_by: agent
 ---
 
 ## Context

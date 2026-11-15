@@ -67,7 +67,7 @@ Always registered. Tool names and descriptions never mention a PM, a board or ch
 | `decision_get` | One decision by ID (aliases resolve) |
 | `decision_list` | Filtered list |
 | `decision_new` | Record a decision; states the basis rule (docs/02) |
-| `decision_accept` / `decision_reject` | Promote a proposed decision because a human said so; `basis` quotes them (D-B2NX, proposed) |
+| `decision_accept` / `decision_reject` | Promote a proposed decision because a human said so; `basis` quotes them (D-B2NX) |
 | `decision_supersede` | Record a replacement |
 | `session_search` | Search session summaries |
 | `session_get` | A session's summary, or its full transcript on request, paged by `offset` and `max_chars` |

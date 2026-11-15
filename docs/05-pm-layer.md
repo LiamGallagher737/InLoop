@@ -37,7 +37,7 @@ InLoop doesn't start sessions or try to be the PM (D-E2GZ). The PM is an agent b
 
 The PM is the only writer of the board. Children report through `task_report` and `task_blocked`, and the PM folds those into the board (D-Y40K). This keeps one writer, which is what made the hand-kept board work.
 
-In practice (D-9QFB, proposed): task changes through MCP are accepted only from the main checkout; reports and blockers are records of their own that never change a task, and `board_fold` (or `inloop board fold`) applies them. `board_list` shows what is waiting to be folded and which blocked tasks are newly unblocked.
+In practice (D-9QFB): task changes through MCP are accepted only from the main checkout; reports and blockers are records of their own that never change a task, and `board_fold` (or `inloop board fold`) applies them. `board_list` shows what is waiting to be folded and which blocked tasks are newly unblocked.
 
 The board lives in `$(git rev-parse --git-common-dir)/inloop/board/` as one JSON file per record (`tasks/`, `claims/`, `reports/`, `blockers/`), each written through the redactor.
 
@@ -45,7 +45,7 @@ The board lives in `$(git rev-parse --git-common-dir)/inloop/board/` as one JSON
 
 `ready`, `running`, `review`, `merged`, `blocked (external)`, `blocked (task)`, `blocked (human)`. The same set the hand-kept boards in Adpatch and Cirkit use. In JSON and on the command line they are `ready`, `running`, `review`, `merged`, `blocked-external`, `blocked-task`, `blocked-human`.
 
-Transitions and claims follow D-KX03 (proposed): `running` needs a branch and opens a claim; a claim by someone else is refused; `ready` and `merged` release claims; blocked statuses need a reason or a blocking task.
+Transitions and claims follow D-KX03: `running` needs a branch and opens a claim; a claim by someone else is refused; `ready` and `merged` release claims; blocked statuses need a reason or a blocking task.
 
 ## The PM toolset
 

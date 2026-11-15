@@ -2,7 +2,7 @@
 
 Each project has one `inloop.toml` at the repo root, committed. It holds everything project-specific, so InLoop's code and defaults stay general (D-0217). InLoop's own file is [`../inloop.toml`](../inloop.toml); keep it and this doc in step.
 
-Personal settings live outside the repo, never in `inloop.toml`: `~/.config/inloop/config.toml` (`data_dir` to move the local session store; `[s3] access_key_id`, `secret_access_key`) and the project keys in `~/.config/inloop/keys/`. `INLOOP_CONFIG_DIR` and `INLOOP_DATA_DIR` move both (D-360T, proposed).
+Personal settings live outside the repo, never in `inloop.toml`: `~/.config/inloop/config.toml` (`data_dir` to move the local session store; `[s3] access_key_id`, `secret_access_key`) and the project keys in `~/.config/inloop/keys/`. `INLOOP_CONFIG_DIR` and `INLOOP_DATA_DIR` move both (D-360T).
 
 ## Sections
 

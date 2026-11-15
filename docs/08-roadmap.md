@@ -61,7 +61,7 @@ Phases 1 to 4 are built, with tests, on main. What is left in each is the part t
 
 ## Open questions
 
-- **Who promotes `proposed` decisions?** Always the human, or the PM during review? Settle by dogfooding; the tool records who promoted each one (`promoted_by`, D-B2NX proposed), so the record will show what works.
+- **Who promotes `proposed` decisions?** D-B2NX settles part of it: a human, or an agent the human tells to in chat, with `promoted_by` recording which. Whether the PM may promote during review is still open; dogfooding will show it.
 - **Board sync for teams:** the free git-ref sync, the paid hosted sync, or both? Decide after the local board is in use.
-- **How summaries are made:** proposed answer D-6KFG: InLoop builds them from the transcript, no model.
-- **Where the age key lives** for each person: proposed answer D-360T: a file in `~/.config/inloop/keys/`, handed over with `inloop key export` and `import`.
+
+Settled since phase 4: summaries are built by InLoop from the transcript with no model (D-6KFG), and each person's age key is a file in `~/.config/inloop/keys/`, handed over with `inloop key export` and `import` (D-360T). Revisit D-6KFG if summaries prove too thin in dogfooding.

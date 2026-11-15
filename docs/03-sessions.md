@@ -8,8 +8,8 @@ The first agent source is Claude Code, which both Liam and his co-founders use (
 
 1. installs Claude Code hooks (`SessionStart`, `Stop`, `PreCompact`, `SessionEnd`) in `.claude/settings.json` with `inloop init`, all calling `inloop session hook`
 2. on `SessionStart` (and every later event) records which session is running in which worktree, for commit trailers and for linking decisions; `SessionEnd` clears it
-3. on `Stop`, `PreCompact` and `SessionEnd` starts `inloop session capture` as a detached background process and returns at once (D-FG6G, proposed)
-4. capture reads the transcript, keeps only conversation records (user, assistant, system, summary) and drops the app's bookkeeping (D-7K5W, proposed), sends it through the redactor (docs/04), then on to storage
+3. on `Stop`, `PreCompact` and `SessionEnd` starts `inloop session capture` as a detached background process and returns at once (D-FG6G)
+4. capture reads the transcript, keeps only conversation records (user, assistant, system, summary) and drops the app's bookkeeping (D-7K5W), sends it through the redactor (docs/04), then on to storage
 
 Capture skips a transcript that hasn't changed since the last capture, holds a per-session lock, and replaces the session's previous blob.
 
@@ -25,7 +25,7 @@ For each session:
 - **A summary:** a short structured summary (what was asked, what was done, decisions, open ends). Search hits summaries first, so agents rarely need a full transcript.
 - **The full transcript:** redacted, compressed, encrypted. Fetched only when someone asks for it.
 
-Summaries are built by InLoop from the redacted transcript with no model call (D-6KFG, proposed): the first prompt, later prompts, the agent's last message, files edited, tool use counts, open to-do items, decisions recorded in the session and commits carrying its trailer.
+Summaries are built by InLoop from the redacted transcript with no model call (D-6KFG): the first prompt, later prompts, the agent's last message, files edited, tool use counts, open to-do items, decisions recorded in the session and commits carrying its trailer.
 
 ## Linking sessions to commits and decisions
 
@@ -43,7 +43,7 @@ Storage is designed as if InLoop may become a product used by people outside Lia
 - **A `SessionStore` trait** with two backends:
   - `local`: a directory on disk. The default, no setup.
   - `s3`: any S3-compatible bucket, which covers Cloudflare R2, AWS S3, Backblaze B2, MinIO and others with one implementation.
-- **Client-side encryption** with [age](https://age-encryption.org/), a key per project, kept at `~/.config/inloop/keys/<project>.agekey` and created on first capture. `inloop key export <file>` and `inloop key import <file>` hand it to a co-founder (D-360T, proposed). Transcripts are encrypted before they leave the machine, so a bucket provider (or a hosted InLoop service later) never sees plaintext. A co-founder gets a project's key, and only that project's.
+- **Client-side encryption** with [age](https://age-encryption.org/), a key per project, kept at `~/.config/inloop/keys/<project>.agekey` and created on first capture. `inloop key export <file>` and `inloop key import <file>` hand it to a co-founder (D-360T). Transcripts are encrypted before they leave the machine, so a bucket provider (or a hosted InLoop service later) never sees plaintext. A co-founder gets a project's key, and only that project's.
 - **Content-addressed blobs:** each transcript is stored under the hash of its encrypted bytes, which is checked before decrypting. age is randomised, so storing the same transcript twice gives two hashes; metadata keeps the current one.
 - **Compression:** zstd, inside the encryption.
 - **Metadata and summaries** go in the local index; with a shared bucket, a small encrypted metadata file per session lets other machines rebuild their index with `inloop session sync`.

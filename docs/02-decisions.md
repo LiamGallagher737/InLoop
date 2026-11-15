@@ -64,7 +64,7 @@ What follows from it, including what it rules out.
 | `supersedes` / `superseded_by` | Links between a decision and the one that replaced it |
 | `aliases` | Other IDs that resolve to this decision, such as an old sequential number (D-P5PT) |
 | `tags` | Free-form, for search and filtering |
-| `promoted_by` | Who accepted or rejected a proposed decision: a person's name, or `agent`. Written only on promotion (D-B2NX, proposed) |
+| `promoted_by` | Who accepted or rejected a proposed decision: a person's name, or `agent`. Written only on promotion (D-B2NX) |
 
 ## The basis rule
 
@@ -75,7 +75,7 @@ A decision is something a human decided, not something an agent chose along the 
 - A choice the agent made itself, however sensible, is recorded as `proposed` with `decided_by: agent`. A human accepts or rejects it later.
 - The MCP tool description for `decision_new` states this rule, because agents read tool descriptions on every call.
 
-Who promotes proposed decisions in practice (always the human, or a PM agent during review) is an open question to settle by dogfooding (docs/08). Agents can promote through MCP when a human tells them to, quoting the human in `basis`, and every promotion records `promoted_by`, so the record shows what happens (D-B2NX, proposed).
+A human promotes proposed decisions, or an agent does it through MCP when a human tells it to, quoting the human in `basis`; every promotion records `promoted_by` (D-B2NX). Whether a PM agent may promote during review is still open (docs/08).
 
 Writes go through the redactor field by field: the body as text, and each frontmatter value on its own, re-quoted if it changed, so a `[REDACTED:...]` marker can never break the YAML.
 
