@@ -16,7 +16,9 @@ What it does, in one run (use --dry-run first):
    (never all digits), keeping the old number in `aliases` (D-P5PT) so
    `inloop dec show D-264` still works for old commit messages.
 2. Turns whole-line "Superseded by D-nnn." markers into supersede links.
-3. Rewrites D-nnn references across the repo's tracked text files.
+3. Rewrites D-nnn references across the repo's tracked text files, expanding
+   "D-nnn to D-nnn" ranges into the IDs they covered, and rebases relative
+   links in each entry onto the new folder.
 4. Deletes the old file.
 5. Runs `inloop scan --fix` so every new file has been through the redactor
    (D-G1R6), then `inloop lint`.
@@ -140,8 +142,33 @@ def main():
 
     ref = re.compile(r"\bD-(\d{3,})\b")
 
+    # "D-077 to D-087" means nothing once IDs are random: expand a range into
+    # the migrated IDs it covered, leaving it alone if it covered none.
+    span = re.compile(r"\bD-(\d{3,}) to D-(\d{3,})\b")
+    by_num = {int(o[2:]): n for o, n in mapping.items()}
+
+    def expand(m):
+        lo, hi = int(m.group(1)), int(m.group(2))
+        ids = [by_num[k] for k in range(lo, hi + 1) if k in by_num]
+        return ", ".join(ids) if lo <= hi and ids else m.group(0)
+
     def rewrite(s):
-        return ref.sub(lambda m: mapping.get(m.group(0), m.group(0)), s)
+        return ref.sub(lambda m: mapping.get(m.group(0), m.group(0)), span.sub(expand, s))
+
+    # Relative links in an entry were written from the old file's folder; the
+    # new files live in out_dir, so rebase them.
+    link = re.compile(r"(\]\()([^)\s]+)(\))")
+    src_dir = os.path.dirname(src)
+
+    def rebase(target):
+        if re.match(r"^(?:[a-z][a-z0-9+.-]*:|#|/)", target, re.I):
+            return target
+        path, frag = (target.split("#", 1) + [""])[:2]
+        new = os.path.relpath(os.path.normpath(os.path.join(src_dir, path)), out_dir)
+        return new + ("#" + frag if frag else "")
+
+    def rebase_links(s):
+        return link.sub(lambda m: m.group(1) + rebase(m.group(2)) + m.group(3), s)
 
     files = {}
     for e in entries:
@@ -171,7 +198,7 @@ def main():
             "---",
             "",
         ]
-        body = rewrite(e["body"]).strip("\n")
+        body = rebase_links(rewrite(e["body"])).strip("\n")
         name = f"{nid}-{slugify(e['title'])}.md"
         files[os.path.join(out_dir, name)] = "\n".join(fm) + body + "\n"
 
