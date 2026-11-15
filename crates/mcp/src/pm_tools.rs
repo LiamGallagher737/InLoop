@@ -18,8 +18,9 @@ pub struct Empty {}
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct TaskIdParams {
-    /// A task ID such as T-4M1P.
-    pub id: String,
+    /// One or more task IDs such as T-4M1P (or 4M1P: the prefix is optional).
+    #[serde(alias = "id", deserialize_with = "crate::one_or_many")]
+    pub ids: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -45,7 +46,9 @@ pub struct TaskNewParams {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct TaskUpdateParams {
-    pub id: String,
+    /// One or more task IDs, all given the same change. The prefix is optional.
+    #[serde(alias = "id", deserialize_with = "crate::one_or_many")]
+    pub ids: Vec<String>,
     /// ready, running, review, merged, blocked-external, blocked-task or blocked-human.
     pub status: Option<String>,
     pub title: Option<String>,
@@ -121,6 +124,34 @@ fn ids(p: &Project, v: Vec<String>) -> Result<Vec<Id>, AppError> {
         .collect()
 }
 
+fn update_from(proj: &Project, p: &TaskUpdateParams) -> Result<TaskUpdate, AppError> {
+    let status = match &p.status {
+        None => None,
+        Some(s) => Some(
+            s.parse::<TaskStatus>()
+                .map_err(|e| AppError::Invalid(e.to_string()))?,
+        ),
+    };
+    let blocked_by = match &p.blocked_by {
+        None => None,
+        Some(v) => Some(ids(proj, v.clone())?),
+    };
+    Ok(TaskUpdate {
+        status,
+        title: p.title.clone(),
+        description: p.description.clone(),
+        touches: p.touches.clone(),
+        blocked_by,
+        blocked_reason: opt(p.blocked_reason.clone()),
+        branch: opt(p.branch.clone()),
+        worktree: opt(p.worktree.clone()),
+        session: opt(p.session.clone()),
+        owner: opt(p.owner.clone()),
+        add_note: p.note.clone(),
+        add_decisions: p.decisions.clone(),
+    })
+}
+
 fn pm_only(p: &Project) -> Result<(), AppError> {
     if p.in_main_worktree() {
         Ok(())
@@ -159,9 +190,12 @@ impl InLoopServer {
         .await
     }
 
-    #[tool(description = "One task with its claims, reports and blockers.")]
+    #[tool(
+        description = "Tasks with their claims, reports and blockers. Pass several IDs to get them all in one call."
+    )]
     pub async fn task_get(&self, Parameters(p): Parameters<TaskIdParams>) -> CallToolResult {
-        self.with_project(move |proj| proj.task_get(&p.id)).await
+        self.with_project_each(p.ids, |_, _| Ok(()), |proj, id| proj.task_get(id))
+            .await
     }
 
     #[tool(description = "Add a task to the board (project manager only).")]
@@ -181,46 +215,31 @@ impl InLoopServer {
     }
 
     #[tool(
-        description = "Change a task (project manager only). Moving to running needs a branch and claims the task; moving to ready or merged releases the claim."
+        description = "Change tasks (project manager only). Several IDs all get the same change. Moving to running needs a branch and claims the task; moving to ready or merged releases the claim."
     )]
     pub async fn task_update(&self, Parameters(p): Parameters<TaskUpdateParams>) -> CallToolResult {
-        self.with_project(move |proj| {
-            pm_only(proj)?;
-            let status = match p.status {
-                None => None,
-                Some(s) => Some(
-                    s.parse::<TaskStatus>()
-                        .map_err(|e| AppError::Invalid(e.to_string()))?,
-                ),
-            };
-            let blocked_by = match p.blocked_by {
-                None => None,
-                Some(v) => Some(ids(proj, v)?),
-            };
-            let update = TaskUpdate {
-                status,
-                title: p.title,
-                description: p.description,
-                touches: p.touches,
-                blocked_by,
-                blocked_reason: opt(p.blocked_reason),
-                branch: opt(p.branch),
-                worktree: opt(p.worktree),
-                session: opt(p.session),
-                owner: opt(p.owner),
-                add_note: p.note,
-                add_decisions: p.decisions,
-            };
-            proj.task_update(&p.id, update, "pm").map(|o| o.task)
-        })
+        let ids = p.ids.clone();
+        self.with_project_each(
+            ids,
+            |proj, ids| {
+                pm_only(proj)?;
+                proj.tasks_exist(ids)
+            },
+            move |proj, id| {
+                pm_only(proj)?;
+                proj.task_update(id, update_from(proj, &p)?, "pm")
+                    .map(|o| o.task)
+            },
+        )
         .await
     }
 
     #[tool(
-        description = "The generated brief to start a task's session with: the task, docs to read, rules, checks, relevant decisions and the report format."
+        description = "The generated brief to start a task's session with: the task, docs to read, rules, checks, relevant decisions and the report format. Pass several IDs to get each brief in one call."
     )]
     pub async fn task_brief(&self, Parameters(p): Parameters<TaskIdParams>) -> CallToolResult {
-        self.with_project(move |proj| proj.task_brief(&p.id)).await
+        self.with_project_each(p.ids, |_, _| Ok(()), |proj, id| proj.task_brief(id))
+            .await
     }
 
     #[tool(

@@ -358,16 +358,7 @@ pub fn task(ctx: &Ctx, cmd: TaskCmd) -> anyhow::Result<ExitCode> {
                 add_note: a.note,
                 add_decisions: a.decisions,
             };
-            // Every ID must name a task before any of them changes.
-            let missing: Vec<&str> = a
-                .ids
-                .iter()
-                .filter(|id| p.task_get(id).is_err())
-                .map(String::as_str)
-                .collect();
-            if !missing.is_empty() {
-                anyhow::bail!("no task {}; nothing changed", missing.join(", "));
-            }
+            p.tasks_exist(&a.ids)?;
             let (tasks, code) = crate::each_id(&a.ids, |id| {
                 Ok(p.task_update(id, update.clone(), &who)?.task)
             });

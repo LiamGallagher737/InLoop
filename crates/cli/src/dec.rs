@@ -115,7 +115,7 @@ pub fn run(ctx: &Ctx, cmd: DecCmd) -> anyhow::Result<ExitCode> {
                 .unwrap_or_else(|| "unknown".into());
             let basis =
                 basis.unwrap_or_else(|| format!("Accepted by {who} with `inloop dec accept`."));
-            check_all_exist(&p, &ids)?;
+            p.decisions_exist(&ids)?;
             let (done, code) = crate::each_id(&ids, |id| {
                 Ok(p.decision_promote(id, true, Some(basis.clone()), Some(who.clone()), &who)?)
             });
@@ -127,7 +127,7 @@ pub fn run(ctx: &Ctx, cmd: DecCmd) -> anyhow::Result<ExitCode> {
         DecCmd::Reject { ids, reason } => {
             let p = ctx.project()?;
             let who = p.git_user().unwrap_or_else(|| "unknown".into());
-            check_all_exist(&p, &ids)?;
+            p.decisions_exist(&ids)?;
             let (done, code) = crate::each_id(&ids, |id| {
                 Ok(p.decision_promote(id, false, reason.clone(), None, &who)?)
             });
@@ -243,21 +243,6 @@ pub fn where_line(s: &Style, e: &DecisionView) -> Option<String> {
     } else {
         Some(s.yellow(&line))
     }
-}
-
-/// Before changing several decisions, make sure every ID names one, so a
-/// typo doesn't leave the batch half done.
-fn check_all_exist(p: &inloop_app::Project, ids: &[String]) -> anyhow::Result<()> {
-    let set = p.decision_set(true)?;
-    let missing: Vec<&str> = ids
-        .iter()
-        .filter(|id| set.get(&p.decision_ref(id)).is_none())
-        .map(String::as_str)
-        .collect();
-    if !missing.is_empty() {
-        bail!("no decision {}; nothing changed", missing.join(", "));
-    }
-    Ok(())
 }
 
 fn show(ctx: &Ctx, ids: &[String]) -> anyhow::Result<ExitCode> {

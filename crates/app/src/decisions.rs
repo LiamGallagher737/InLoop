@@ -169,6 +169,25 @@ impl Project {
         self.config.decisions.id_spec().qualify(id)
     }
 
+    /// Fail, naming them, if any of `ids` names no decision. Batch commands
+    /// call this first so a typo changes nothing.
+    pub fn decisions_exist(&self, ids: &[String]) -> Result<(), AppError> {
+        let set = self.decision_set(true)?;
+        let missing: Vec<&str> = ids
+            .iter()
+            .filter(|id| set.get(&self.decision_ref(id)).is_none())
+            .map(String::as_str)
+            .collect();
+        if missing.is_empty() {
+            Ok(())
+        } else {
+            Err(AppError::NotFound(format!(
+                "decision {}; nothing changed",
+                missing.join(", ")
+            )))
+        }
+    }
+
     pub fn decision_get(&self, id: &str) -> Result<DecisionView, AppError> {
         let set = self.decision_set(true)?;
         let id = self.decision_ref(id);

@@ -53,6 +53,7 @@ Record design choices with `decision_new`. The basis rule applies to you and to 
 
 - Record a decision as `accepted` only when a human made it, or it is unmistakably clear from what they said. Quote them in `basis`.
 - Anything an agent chose is `proposed`, and the human decides later.
+- When you present several proposed decisions and the human accepts them, accept them all in one `decision_accept` call with every ID in `ids` and their words in `basis`. Same for `decision_reject`.
 
 Search decisions (`decision_search`) before planning work that might already be settled, and before reviewing work that should follow a decision.
 

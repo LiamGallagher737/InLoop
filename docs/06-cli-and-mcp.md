@@ -45,6 +45,7 @@ inloop task report|blocked        what a task session reports (usually through M
 - **Commands that act on one record take several.** `dec show`, `dec accept`, `dec reject`, `task show`, `task update` and `task brief` take any number of IDs, so accepting a list a human just approved is one command: `inloop dec accept 7KQ2 P5PT 0217`. Every ID gets the same flags (`--basis`, `--status` and so on).
 - **A batch checks first, then carries on.** Commands that change records check every ID names one before changing anything, so a typo changes nothing. Past that, a failure on one ID (say, a decision that is already accepted) is reported on stderr and the rest still run; the exit code is non-zero if any failed.
 - **`--json` keeps its shape for one ID**: one ID gives the object as before, several give an array.
+- **MCP works the same way.** `decision_get`, `decision_accept`, `decision_reject`, `task_get`, `task_update` and `task_brief` take `ids`, a list (a single string, or the old `id` field, still works). So when a PM or any agent presents a list of proposed decisions and the human accepts them, it is one `decision_accept` call (D-7JHP). One ID returns exactly what it always did. Several check every ID first, as the CLI does, then return `{"done": [...], "failed": [{"id", "error"}]}`; the call is an error only if nothing worked.
 
 ### Output rules
 
@@ -71,10 +72,10 @@ Always registered. Tool names and descriptions never mention a PM, a board or ch
 | Tool | Does |
 |---|---|
 | `decision_search` | Full-text search over decisions on every branch and worktree |
-| `decision_get` | One decision by ID (aliases resolve) |
+| `decision_get` | Decisions by ID (aliases resolve) |
 | `decision_list` | Filtered list |
 | `decision_new` | Record a decision; states the basis rule (docs/02) |
-| `decision_accept` / `decision_reject` | Promote a proposed decision because a human said so; `basis` quotes them (D-B2NX) |
+| `decision_accept` / `decision_reject` | Promote or reject proposed decisions because a human said so; `basis` quotes them (D-B2NX). Several in one call when the human decides on a list |
 | `decision_supersede` | Record a replacement |
 | `session_search` | Search session summaries |
 | `session_get` | A session's summary, or its full transcript on request, paged by `offset` and `max_chars` |
@@ -90,8 +91,8 @@ Registered only when `[pm] enabled = true`.
 | `board_list` | The board, plus reports and blockers not folded in yet and newly unblocked tasks |
 | `board_check` | Conflict check for a set of tasks |
 | `board_fold` | Fold reports and blockers into the board (PM only, D-9QFB) |
-| `task_get` / `task_new` / `task_update` | Task records (PM only writes, from the main checkout) |
-| `task_brief` | Generated brief for a task |
+| `task_get` / `task_new` / `task_update` | Task records (PM only writes, from the main checkout); get and update take several IDs |
+| `task_brief` | Generated briefs for tasks |
 | `task_report` | A child's structured end-of-work report |
 | `task_blocked` | A child reporting it is blocked, and on what |
 

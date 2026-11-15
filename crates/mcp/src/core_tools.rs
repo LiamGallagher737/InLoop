@@ -24,8 +24,9 @@ pub struct SearchParams {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct IdParams {
-    /// A decision ID such as D-7KQ2, or an old alias such as D-264.
-    pub id: String,
+    /// One or more decision IDs such as D-7KQ2 (or 7KQ2: the prefix is optional), or old aliases such as D-264.
+    #[serde(alias = "id", deserialize_with = "crate::one_or_many")]
+    pub ids: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -65,9 +66,10 @@ pub struct NewParams {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct AcceptParams {
-    /// The proposed decision to accept.
-    pub id: String,
-    /// The human's words accepting it, quoted.
+    /// The proposed decisions to accept, e.g. ["D-7KQ2", "P5PT"]. The prefix is optional.
+    #[serde(alias = "id", deserialize_with = "crate::one_or_many")]
+    pub ids: Vec<String>,
+    /// The human's words accepting them, quoted.
     pub basis: String,
     /// The human who accepted it.
     pub decided_by: Option<String>,
@@ -75,8 +77,9 @@ pub struct AcceptParams {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct RejectParams {
-    /// The proposed decision to reject.
-    pub id: String,
+    /// The proposed decisions to reject. The prefix is optional.
+    #[serde(alias = "id", deserialize_with = "crate::one_or_many")]
+    pub ids: Vec<String>,
     /// The human's reason, quoted, if they gave one.
     pub reason: Option<String>,
 }
@@ -128,10 +131,10 @@ impl InLoopServer {
     }
 
     #[tool(
-        description = "Get one decision in full by ID (old aliases such as D-264 also work), with its provenance."
+        description = "Get decisions in full by ID (old aliases such as D-264 also work), with their provenance. Pass several IDs to get them all in one call."
     )]
     pub async fn decision_get(&self, Parameters(p): Parameters<IdParams>) -> CallToolResult {
-        self.with_project(move |proj| proj.decision_get(&p.id))
+        self.with_project_each(p.ids, |_, _| Ok(()), |proj, id| proj.decision_get(id))
             .await
     }
 
@@ -199,19 +202,31 @@ impl InLoopServer {
     }
 
     #[tool(
-        description = "Accept a proposed decision because a human said so. `basis` must quote the human's words; never accept a decision on your own judgement."
+        description = "Accept proposed decisions because a human said so. `basis` must quote the human's words; never accept a decision on your own judgement. When the human accepts several at once, pass all their IDs in one call: every ID is checked first, so a wrong one changes nothing; the result lists what was accepted and what failed."
     )]
     pub async fn decision_accept(&self, Parameters(p): Parameters<AcceptParams>) -> CallToolResult {
-        self.with_project(move |proj| {
-            proj.decision_promote(&p.id, true, Some(p.basis), p.decided_by, "agent")
-        })
+        let (basis, by) = (p.basis, p.decided_by);
+        self.with_project_each(
+            p.ids,
+            |proj, ids| proj.decisions_exist(ids),
+            move |proj, id| {
+                proj.decision_promote(id, true, Some(basis.clone()), by.clone(), "agent")
+            },
+        )
         .await
     }
 
-    #[tool(description = "Reject a proposed decision because a human said so.")]
+    #[tool(
+        description = "Reject proposed decisions because a human said so. Pass several IDs to reject them in one call; the result lists what was rejected and what failed."
+    )]
     pub async fn decision_reject(&self, Parameters(p): Parameters<RejectParams>) -> CallToolResult {
-        self.with_project(move |proj| proj.decision_promote(&p.id, false, p.reason, None, "agent"))
-            .await
+        let reason = p.reason;
+        self.with_project_each(
+            p.ids,
+            |proj, ids| proj.decisions_exist(ids),
+            move |proj, id| proj.decision_promote(id, false, reason.clone(), None, "agent"),
+        )
+        .await
     }
 
     #[tool(

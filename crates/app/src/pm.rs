@@ -145,6 +145,25 @@ impl Project {
         })
     }
 
+    /// Fail, naming them, if any of `ids` names no task. Batch commands call
+    /// this first so a typo changes nothing.
+    pub fn tasks_exist(&self, ids: &[String]) -> Result<(), AppError> {
+        self.require_pm()?;
+        let missing: Vec<&str> = ids
+            .iter()
+            .filter(|id| self.get_task(id).is_err())
+            .map(String::as_str)
+            .collect();
+        if missing.is_empty() {
+            Ok(())
+        } else {
+            Err(AppError::NotFound(format!(
+                "task {}; nothing changed",
+                missing.join(", ")
+            )))
+        }
+    }
+
     pub fn task_get(&self, id: &str) -> Result<TaskView, AppError> {
         self.require_pm()?;
         let task = self.get_task(id)?;

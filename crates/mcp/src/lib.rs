@@ -12,7 +12,7 @@ use inloop_app::{AppError, Project};
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::model::{CallToolResult, ContentBlock, Implementation, ServerCapabilities, ServerConfig};
 use rmcp::{ServerHandler, ServiceExt, tool_handler};
-use serde::Serialize;
+use serde::{Deserialize, Deserializer, Serialize};
 
 pub use core_tools::*;
 pub use pm_tools::*;
@@ -98,6 +98,94 @@ impl InLoopServer {
             },
             Ok(Err(e)) => CallToolResult::error(vec![ContentBlock::text(format!("error: {e}"))]),
             Err(e) => CallToolResult::error(vec![ContentBlock::text(format!("error: {e}"))]),
+        }
+    }
+}
+
+/// Deserialize `ids` from either one string or a list, so a call written
+/// with a single `id` still works.
+pub(crate) fn one_or_many<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<String>, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum OneOrMany {
+        One(String),
+        Many(Vec<String>),
+    }
+    Ok(match OneOrMany::deserialize(d)? {
+        OneOrMany::One(s) => vec![s],
+        OneOrMany::Many(v) => v,
+    })
+}
+
+/// What a call with several IDs returns: what worked and what didn't.
+#[derive(Serialize)]
+struct Batch<T> {
+    done: Vec<T>,
+    failed: Vec<Failed>,
+}
+
+#[derive(Serialize)]
+struct Failed {
+    id: String,
+    error: String,
+}
+
+impl InLoopServer {
+    /// Run `f` for each of `ids`. With one ID the result is exactly what a
+    /// single call returns. With several, `check` runs first (so a missing
+    /// ID changes nothing), then every ID is tried and the result lists what
+    /// was done and what failed; it is an error only if nothing worked.
+    pub(crate) async fn with_project_each<T, C, F>(
+        &self,
+        ids: Vec<String>,
+        check: C,
+        f: F,
+    ) -> CallToolResult
+    where
+        T: Serialize + Send + 'static,
+        C: FnOnce(&Project, &[String]) -> Result<(), AppError> + Send + 'static,
+        F: Fn(&Project, &str) -> Result<T, AppError> + Send + 'static,
+    {
+        match ids.as_slice() {
+            [] => CallToolResult::error(vec![ContentBlock::text(
+                "error: give at least one ID".to_string(),
+            )]),
+            [one] => {
+                let one = one.clone();
+                self.with_project(move |p| f(p, &one)).await
+            }
+            _ => {
+                let dir = self.dir.clone();
+                let res = tokio::task::spawn_blocking(move || {
+                    let p = Project::open(&dir)?;
+                    check(&p, &ids)?;
+                    let mut b = Batch {
+                        done: Vec::new(),
+                        failed: Vec::new(),
+                    };
+                    for id in &ids {
+                        match f(&p, id) {
+                            Ok(v) => b.done.push(v),
+                            Err(e) => b.failed.push(Failed {
+                                id: id.clone(),
+                                error: e.to_string(),
+                            }),
+                        }
+                    }
+                    Ok::<_, AppError>(b)
+                })
+                .await;
+                let text = |s: String| vec![ContentBlock::text(s)];
+                match res {
+                    Ok(Ok(b)) => match serde_json::to_string(&b) {
+                        Ok(s) if b.done.is_empty() => CallToolResult::error(text(s)),
+                        Ok(s) => CallToolResult::success(text(s)),
+                        Err(e) => CallToolResult::error(text(format!("error: {e}"))),
+                    },
+                    Ok(Err(e)) => CallToolResult::error(text(format!("error: {e}"))),
+                    Err(e) => CallToolResult::error(text(format!("error: {e}"))),
+                }
+            }
         }
     }
 }

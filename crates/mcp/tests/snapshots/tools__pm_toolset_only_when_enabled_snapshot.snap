@@ -72,34 +72,40 @@ expression: pm
   },
   {
     "name": "task_brief",
-    "description": "The generated brief to start a task's session with: the task, docs to read, rules, checks, relevant decisions and the report format.",
+    "description": "The generated brief to start a task's session with: the task, docs to read, rules, checks, relevant decisions and the report format. Pass several IDs to get each brief in one call.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "required": [
-        "id"
+        "ids"
       ],
       "type": "object",
       "properties": {
-        "id": {
-          "description": "A task ID such as T-4M1P.",
-          "type": "string"
+        "ids": {
+          "description": "One or more task IDs such as T-4M1P (or 4M1P: the prefix is optional).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }
   },
   {
     "name": "task_get",
-    "description": "One task with its claims, reports and blockers.",
+    "description": "Tasks with their claims, reports and blockers. Pass several IDs to get them all in one call.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "required": [
-        "id"
+        "ids"
       ],
       "type": "object",
       "properties": {
-        "id": {
-          "description": "A task ID such as T-4M1P.",
-          "type": "string"
+        "ids": {
+          "description": "One or more task IDs such as T-4M1P (or 4M1P: the prefix is optional).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }
@@ -233,16 +239,20 @@ expression: pm
   },
   {
     "name": "task_update",
-    "description": "Change a task (project manager only). Moving to running needs a branch and claims the task; moving to ready or merged releases the claim.",
+    "description": "Change tasks (project manager only). Several IDs all get the same change. Moving to running needs a branch and claims the task; moving to ready or merged releases the claim.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "required": [
-        "id"
+        "ids"
       ],
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string"
+        "ids": {
+          "description": "One or more task IDs, all given the same change. The prefix is optional.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "status": {
           "description": "ready, running, review, merged, blocked-external, blocked-task or blocked-human.",

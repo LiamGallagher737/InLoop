@@ -168,3 +168,52 @@ fn core_tools_work_over_stdio() {
     assert_eq!(ctx["branch"], "main");
     assert_eq!(ctx["on_main"], true);
 }
+
+#[test]
+fn decisions_accept_in_one_call() {
+    let r = Repo::new();
+    let mut m = Mcp::start(&r);
+    let new = |m: &mut Mcp, title: &str| {
+        let (err, w) = m.call(
+            "decision_new",
+            json!({"title": title, "context": "c", "decision": "d", "consequences": "e"}),
+        );
+        assert!(!err, "{w}");
+        w["id"].as_str().unwrap().to_string()
+    };
+    let (a, b, c) = (new(&mut m, "One"), new(&mut m, "Two"), new(&mut m, "Three"));
+    let bare = |id: &str| id.trim_start_matches("D-").to_string();
+
+    // A wrong ID in the batch changes nothing.
+    let (err, msg) = m.call(
+        "decision_accept",
+        json!({"ids": [a, "ZZZZ"], "basis": "Liam: \"all of them\""}),
+    );
+    assert!(err);
+    assert!(msg.as_str().unwrap().contains("nothing changed"), "{msg}");
+    let (_, d) = m.call("decision_get", json!({"ids": [bare(&a)]}));
+    assert_eq!(d["status"], "proposed");
+
+    // Accept two in one call, one without its prefix.
+    let (err, out) = m.call(
+        "decision_accept",
+        json!({"ids": [a, bare(&b)], "basis": "Liam: \"accept both\""}),
+    );
+    assert!(!err, "{out}");
+    assert_eq!(out["done"].as_array().unwrap().len(), 2, "{out}");
+    assert!(out["failed"].as_array().unwrap().is_empty());
+
+    // Getting several returns them all; one already accepted fails alone.
+    let (_, got) = m.call("decision_get", json!({"ids": [a, b, c]}));
+    let statuses: Vec<&str> = got["done"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| d["status"].as_str().unwrap())
+        .collect();
+    assert_eq!(statuses, ["accepted", "accepted", "proposed"]);
+    let (err, out) = m.call("decision_reject", json!({"ids": [a, c]}));
+    assert!(!err, "{out}");
+    assert_eq!(out["done"][0]["id"], c.as_str());
+    assert_eq!(out["failed"][0]["id"], a.as_str());
+}

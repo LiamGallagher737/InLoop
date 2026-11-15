@@ -13,21 +13,24 @@ expression: tools
   },
   {
     "name": "decision_accept",
-    "description": "Accept a proposed decision because a human said so. `basis` must quote the human's words; never accept a decision on your own judgement.",
+    "description": "Accept proposed decisions because a human said so. `basis` must quote the human's words; never accept a decision on your own judgement. When the human accepts several at once, pass all their IDs in one call: every ID is checked first, so a wrong one changes nothing; the result lists what was accepted and what failed.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "required": [
-        "id",
+        "ids",
         "basis"
       ],
       "type": "object",
       "properties": {
-        "id": {
-          "description": "The proposed decision to accept.",
-          "type": "string"
+        "ids": {
+          "description": "The proposed decisions to accept, e.g. [\"D-7KQ2\", \"P5PT\"]. The prefix is optional.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "basis": {
-          "description": "The human's words accepting it, quoted.",
+          "description": "The human's words accepting them, quoted.",
           "type": "string"
         },
         "decided_by": {
@@ -42,17 +45,20 @@ expression: tools
   },
   {
     "name": "decision_get",
-    "description": "Get one decision in full by ID (old aliases such as D-264 also work), with its provenance.",
+    "description": "Get decisions in full by ID (old aliases such as D-264 also work), with their provenance. Pass several IDs to get them all in one call.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "required": [
-        "id"
+        "ids"
       ],
       "type": "object",
       "properties": {
-        "id": {
-          "description": "A decision ID such as D-7KQ2, or an old alias such as D-264.",
-          "type": "string"
+        "ids": {
+          "description": "One or more decision IDs such as D-7KQ2 (or 7KQ2: the prefix is optional), or old aliases such as D-264.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }
@@ -170,17 +176,20 @@ expression: tools
   },
   {
     "name": "decision_reject",
-    "description": "Reject a proposed decision because a human said so.",
+    "description": "Reject proposed decisions because a human said so. Pass several IDs to reject them in one call; the result lists what was rejected and what failed.",
     "input_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "required": [
-        "id"
+        "ids"
       ],
       "type": "object",
       "properties": {
-        "id": {
-          "description": "The proposed decision to reject.",
-          "type": "string"
+        "ids": {
+          "description": "The proposed decisions to reject. The prefix is optional.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "reason": {
           "description": "The human's reason, quoted, if they gave one.",
