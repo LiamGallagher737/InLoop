@@ -4,6 +4,7 @@
 
 pub mod decisions;
 pub mod hooks;
+pub mod json;
 pub mod pm;
 pub mod project;
 pub mod scan;

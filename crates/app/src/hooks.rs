@@ -88,13 +88,14 @@ fn upgrade_legacy(groups: &mut Value) -> bool {
 pub fn install_claude_hooks(root: &Path, report: &mut HookReport) -> Result<(), AppError> {
     let path = settings_path(root);
     let existed = path.exists();
-    let mut doc: Value = match std::fs::read_to_string(&path) {
-        Ok(t) => serde_json::from_str(&t).map_err(|e| {
+    let existing = std::fs::read_to_string(&path).ok();
+    let mut doc: Value = match &existing {
+        Some(t) => serde_json::from_str(t).map_err(|e| {
             AppError::Invalid(format!(
                 ".claude/settings.json is not valid JSON ({e}); fix it and run init again"
             ))
         })?,
-        Err(_) => json!({}),
+        None => json!({}),
     };
     let obj = doc
         .as_object_mut()
@@ -131,8 +132,8 @@ pub fn install_claude_hooks(root: &Path, report: &mut HookReport) -> Result<(), 
     if let Some(d) = path.parent() {
         std::fs::create_dir_all(d).map_err(|e| AppError::io("creating .claude", e))?;
     }
-    let text =
-        serde_json::to_string_pretty(&doc).map_err(|e| AppError::Other(e.to_string()))? + "\n";
+    let text = crate::json::to_string_like(&doc, existing.as_deref())
+        .map_err(|e| AppError::Other(e.to_string()))?;
     std::fs::write(&path, text).map_err(|e| AppError::io("writing .claude/settings.json", e))?;
     if existed {
         report.updated.push(name)
@@ -243,14 +244,41 @@ mod tests {
         let mut r = HookReport::default();
         install_claude_hooks(root, &mut r).unwrap();
         assert_eq!(r.updated, vec![".claude/settings.json"]);
-        let v: Value = serde_json::from_str(
-            &std::fs::read_to_string(root.join(".claude/settings.json")).unwrap(),
-        )
-        .unwrap();
+        let text = std::fs::read_to_string(root.join(".claude/settings.json")).unwrap();
+        let v: Value = serde_json::from_str(&text).unwrap();
         for e in HOOK_EVENTS {
             let groups = v["hooks"][*e].as_array().unwrap();
             assert_eq!(groups.len(), 1, "{e}");
             assert_eq!(groups[0]["hooks"][0]["command"], HOOK_COMMAND, "{e}");
         }
+    }
+
+    #[test]
+    fn upgrade_keeps_the_files_indentation() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        std::fs::create_dir_all(root.join(".claude")).unwrap();
+        let groups = |cmd: &str| {
+            HOOK_EVENTS
+                .iter()
+                .map(|e| {
+                    format!(
+                        "\t\t\"{e}\": [\n\t\t\t{{\n\t\t\t\t\"hooks\": [\n\t\t\t\t\t{{\n\t\t\t\t\t\t\"type\": \"command\",\n\t\t\t\t\t\t\"command\": {}\n\t\t\t\t\t}}\n\t\t\t\t]\n\t\t\t}}\n\t\t]",
+                        serde_json::to_string(cmd).unwrap()
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(",\n")
+        };
+        let file = |cmd: &str| format!("{{\n\t\"hooks\": {{\n{}\n\t}}\n}}\n", groups(cmd));
+        std::fs::write(
+            root.join(".claude/settings.json"),
+            file(LEGACY_HOOK_COMMAND),
+        )
+        .unwrap();
+        let mut r = HookReport::default();
+        install_claude_hooks(root, &mut r).unwrap();
+        let text = std::fs::read_to_string(root.join(".claude/settings.json")).unwrap();
+        assert_eq!(text, file(HOOK_COMMAND));
     }
 }

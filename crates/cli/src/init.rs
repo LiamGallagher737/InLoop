@@ -111,12 +111,13 @@ pub fn run(ctx: &Ctx, a: InitArgs) -> anyhow::Result<ExitCode> {
 /// Add `inloop mcp` to the project's `.mcp.json`, keeping other servers.
 fn register_mcp(root: &Path, r: &mut InitReport) -> anyhow::Result<()> {
     let path = root.join(".mcp.json");
-    let mut doc: serde_json::Value = match std::fs::read_to_string(&path) {
-        Ok(t) => serde_json::from_str(&t)
+    let existing = std::fs::read_to_string(&path).ok();
+    let mut doc: serde_json::Value = match &existing {
+        Some(t) => serde_json::from_str(t)
             .context(".mcp.json is not valid JSON; fix it and run init again")?,
-        Err(_) => serde_json::json!({}),
+        None => serde_json::json!({}),
     };
-    let existed = path.exists();
+    let existed = existing.is_some();
     let want = serde_json::json!({ "command": "inloop", "args": ["mcp"] });
     let Some(obj) = doc.as_object_mut() else {
         anyhow::bail!(".mcp.json is not a JSON object");
@@ -132,8 +133,11 @@ fn register_mcp(root: &Path, r: &mut InitReport) -> anyhow::Result<()> {
         return Ok(());
     }
     servers.insert("inloop".into(), want);
-    std::fs::write(&path, serde_json::to_string_pretty(&doc)? + "\n")
-        .context("writing .mcp.json")?;
+    std::fs::write(
+        &path,
+        inloop_app::json::to_string_like(&doc, existing.as_deref())?,
+    )
+    .context("writing .mcp.json")?;
     if existed {
         r.updated.push(".mcp.json".into());
     } else {
