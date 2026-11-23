@@ -9,8 +9,14 @@ use serde_json::{Value, json};
 
 use crate::project::AppError;
 
-/// The command Claude Code runs for every InLoop hook.
-pub const HOOK_COMMAND: &str = "inloop session hook";
+/// The command Claude Code runs for every InLoop hook. The settings file is
+/// committed, so the guard keeps Claude Code quiet for anyone working in the
+/// repo who hasn't installed InLoop (D-KG5E). `inloop session hook` always
+/// exits successfully, so `|| true` hides nothing.
+pub const HOOK_COMMAND: &str = "command -v inloop >/dev/null 2>&1 && inloop session hook || true";
+
+/// What InLoop's hooks ran before the guard. `init` upgrades it in place.
+const LEGACY_HOOK_COMMAND: &str = "inloop session hook";
 
 /// Claude Code hook events InLoop listens to.
 pub const HOOK_EVENTS: &[&str] = &["SessionStart", "Stop", "PreCompact", "SessionEnd"];
@@ -38,7 +44,7 @@ fn has_our_hook(groups: &Value) -> bool {
                 hs.iter().any(|h| {
                     h.get("command")
                         .and_then(Value::as_str)
-                        .is_some_and(|c| c.trim_start().starts_with(HOOK_COMMAND))
+                        .is_some_and(|c| c.contains(LEGACY_HOOK_COMMAND))
                 })
             })
         })
@@ -58,6 +64,24 @@ pub fn claude_hooks_installed(root: &Path) -> bool {
             .and_then(|h| h.get(*e))
             .is_some_and(has_our_hook)
     })
+}
+
+/// Replace the unguarded command from older installs with [`HOOK_COMMAND`].
+fn upgrade_legacy(groups: &mut Value) -> bool {
+    let mut changed = false;
+    for g in groups.as_array_mut().into_iter().flatten() {
+        let Some(hs) = g.get_mut("hooks").and_then(Value::as_array_mut) else {
+            continue;
+        };
+        for h in hs {
+            if h.get("command").and_then(Value::as_str).map(str::trim) == Some(LEGACY_HOOK_COMMAND)
+            {
+                h["command"] = json!(HOOK_COMMAND);
+                changed = true;
+            }
+        }
+    }
+    changed
 }
 
 /// Add InLoop's hooks to `.claude/settings.json`, keeping everything else.
@@ -82,6 +106,7 @@ pub fn install_claude_hooks(root: &Path, report: &mut HookReport) -> Result<(), 
     let mut changed = false;
     for event in HOOK_EVENTS {
         let groups = hooks.entry(event.to_string()).or_insert_with(|| json!([]));
+        changed |= upgrade_legacy(groups);
         if has_our_hook(groups) {
             continue;
         }
@@ -198,5 +223,34 @@ mod tests {
         let mut r = HookReport::default();
         install_claude_hooks(root, &mut r).unwrap();
         assert_eq!(r.unchanged, vec![".claude/settings.json"]);
+    }
+
+    #[test]
+    fn upgrades_unguarded_hooks() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        std::fs::create_dir_all(root.join(".claude")).unwrap();
+        let old = HOOK_EVENTS
+            .iter()
+            .map(|e| format!(r#""{e}":[{{"hooks":[{{"type":"command","command":"inloop session hook","timeout":30}}]}}]"#))
+            .collect::<Vec<_>>()
+            .join(",");
+        std::fs::write(
+            root.join(".claude/settings.json"),
+            format!(r#"{{"hooks":{{{old}}}}}"#),
+        )
+        .unwrap();
+        let mut r = HookReport::default();
+        install_claude_hooks(root, &mut r).unwrap();
+        assert_eq!(r.updated, vec![".claude/settings.json"]);
+        let v: Value = serde_json::from_str(
+            &std::fs::read_to_string(root.join(".claude/settings.json")).unwrap(),
+        )
+        .unwrap();
+        for e in HOOK_EVENTS {
+            let groups = v["hooks"][*e].as_array().unwrap();
+            assert_eq!(groups.len(), 1, "{e}");
+            assert_eq!(groups[0]["hooks"][0]["command"], HOOK_COMMAND, "{e}");
+        }
     }
 }

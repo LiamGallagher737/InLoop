@@ -24,7 +24,7 @@ Phases 1 to 4 are built, with tests, on main. What is left in each is the part t
 - Clean up InLoop's own hand-written decisions with the CLI (`inloop lint`, fix anything it finds).
 - The one-off migration script, then migrate Cirkit and Adpatch.
 - **Exit:** InLoop, Cirkit and Adpatch all record decisions only through InLoop for two weeks; no decision ID conflicts; agents use `decision_search` instead of reading the decisions folder.
-- **Still to do:** run `tools/migrate_decisions.py` on Cirkit and Adpatch (tested on a scratch copy of Adpatch's log only), install `inloop` and run `inloop init` in all three, then the two weeks of use.
+- **Still to do:** run `tools/migrate_decisions.py` on Cirkit and Adpatch (tested on a scratch copy of Adpatch's log only), install `inloop` (with `install.sh`, D-AX7W) and run `inloop init` in all three, then the two weeks of use. Cirkit and Adpatch need `inloop init` run again and `.claude/settings.json` committed to pick up the guarded hooks (D-KG5E).
 
 ## Phase 2: redaction (built)
 

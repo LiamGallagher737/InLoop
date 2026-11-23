@@ -6,7 +6,7 @@ InLoop captures agent sessions so the reasoning behind a change can be found lat
 
 The first agent source is Claude Code, which both Liam and his co-founders use (D-TBR6). Claude Code already writes each session as JSONL under `~/.claude/projects/<project-slug>/`. InLoop:
 
-1. installs Claude Code hooks (`SessionStart`, `Stop`, `PreCompact`, `SessionEnd`) in `.claude/settings.json` with `inloop init`, all calling `inloop session hook`
+1. installs Claude Code hooks (`SessionStart`, `Stop`, `PreCompact`, `SessionEnd`) in `.claude/settings.json` with `inloop init`, all calling `inloop session hook`, guarded so a hook does nothing on a machine without `inloop` installed, since the settings file is committed (D-KG5E)
 2. on `SessionStart` (and every later event) records which session is running in which worktree, for commit trailers and for linking decisions; `SessionEnd` clears it
 3. on `Stop`, `PreCompact` and `SessionEnd` starts `inloop session capture` as a detached background process and returns at once (D-FG6G)
 4. capture reads the transcript, keeps only conversation records (user, assistant, system, summary) and drops the app's bookkeeping (D-7K5W), sends it through the redactor (docs/04), then on to storage

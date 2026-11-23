@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "inloop session hook",
+            "command": "command -v inloop >/dev/null 2>&1 && inloop session hook || true",
             "timeout": 10
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "inloop session hook",
+            "command": "command -v inloop >/dev/null 2>&1 && inloop session hook || true",
             "timeout": 30
           }
         ]
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "inloop session hook",
+            "command": "command -v inloop >/dev/null 2>&1 && inloop session hook || true",
             "timeout": 30
           }
         ]
@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "inloop session hook",
+            "command": "command -v inloop >/dev/null 2>&1 && inloop session hook || true",
             "timeout": 30
           }
         ]

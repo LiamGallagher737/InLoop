@@ -1,4 +1,4 @@
-# InLoop's own project config. Draft: no CLI reads this yet.
+# InLoop's own project config.
 # The format is described in docs/07-config.md. Keep the two in step.
 
 [project]
