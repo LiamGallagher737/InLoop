@@ -1427,7 +1427,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-app"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "inloop-core",
  "inloop-decisions",
@@ -1446,7 +1446,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -1469,7 +1469,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "jiff",
  "rand 0.10.3",
@@ -1483,7 +1483,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-decisions"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "globset",
  "inloop-core",
@@ -1499,7 +1499,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-git"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "tempfile",
  "thiserror 2.0.21",
@@ -1507,7 +1507,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-index"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "inloop-redact",
  "rusqlite",
@@ -1519,7 +1519,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-mcp"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "inloop-app",
  "inloop-core",
@@ -1536,7 +1536,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-pm"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "globset",
  "inloop-core",
@@ -1551,7 +1551,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-redact"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aho-corasick",
  "base64 0.23.1",
@@ -1567,7 +1567,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-sessions"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "inloop-core",
  "inloop-redact",
@@ -1580,7 +1580,7 @@ dependencies = [
 
 [[package]]
 name = "inloop-store"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "age",
  "futures",
